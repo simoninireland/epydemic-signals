@@ -30,10 +30,16 @@ VERSION = 0.1.1
 SOURCES_SETUP_IN = setup.py.in
 SOURCES_CODE = \
 	epydemic_signals/__init__.py \
-	epydemic_signals/signal.py
+	epydemic_signals/sir_healing.py \
+	epydemic_signals/sir_healing_one.py \
+	epydemic_signals/hitting_healing.py \
+	epydemic_signals/signal.py \
+	epydemic_signals/progress_signal.py \
+
 SOURCES_TESTS = \
 	test/__init__.py \
-	test/test_signal.py
+	test/test_signal.py \
+	test/test_progress.py
 
 SOURCES_DOC_CONF = doc/conf.py
 SOURCES_DOC_BUILD_DIR = doc/_build
