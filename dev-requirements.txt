@@ -1,0 +1,13 @@
+mypy
+tox
+coverage
+wheel
+sphinx
+sphinx_rtd_theme
+sphinx-autodoc-typehints
+doc8
+twine
+black
+pylint
+flake8
+rope
