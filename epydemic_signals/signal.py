@@ -136,7 +136,7 @@ class Signal:
                     i -= 1
         elif t > current:
             ndiffs = len(self._transitions)
-            while t >= current and i < ndiffs - 1:
+            while t >= current and i < ndiffs:
                 current = self._transitions[i]
                 if t >= current:
                     # step forward
