@@ -36,16 +36,17 @@ class OneInfectionSIR(HealingSIR):
     def initialCompartments(self):
         '''Select a single node to infect.'''
         g = self.network()
-        ns = set(g.nodes())
+        ns = list(g.nodes())
         N = len(ns)
 
         # choose one node and infect it
         rng = numpy.random.default_rng()
-        n = rng.integers(N)
+        i = rng.integers(N)
+        n = ns[i]
         self.changeInitialCompartment(n, self.INFECTED)
         self.markHit(n, 0.0)
 
         # mark all other nodes as susceptible
-        ns.remove(n)
+        del ns[i]
         for n in ns:
             self.changeInitialCompartment(n, self.SUSCEPTIBLE)
