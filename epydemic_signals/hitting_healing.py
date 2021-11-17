@@ -78,10 +78,10 @@ class HittingHealingTimes(Process):
             # results dict
             rc = cast(ResultsDict, ts)
             res = rc[Experiment.RESULTS]
-            hitting_ts = res[cls.HITTING_TIMES]
-            hitting_ns = res[cls.HITTING_TIMES_NODES]
-            healing_ts = res[cls.HEALING_TIMES]
-            healing_ns = res[cls.HEALING_TIMES_NODES]
+            hitting_ts = res.get(cls.HITTING_TIMES, [])
+            hitting_ns = res.get(cls.HITTING_TIMES_NODES, [])
+            healing_ts = res.get(cls.HEALING_TIMES, [])
+            healing_ns = res.get(cls.HEALING_TIMES_NODES, [])
 
         # merge events
         evs = []
