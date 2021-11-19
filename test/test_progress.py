@@ -207,7 +207,7 @@ class ProgressSignalTests(unittest.TestCase):
         susceptibles = ns.copy()
         infecteds = set()
         removeds = set()
-        for (t, e, s) in evs[:10]:
+        for (t, e, s) in evs:
             #print(t, e, s)
             sig = signal[t]
 
