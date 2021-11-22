@@ -71,7 +71,7 @@ class Signal:
     # ---------- Accessing the signal ----------
 
     def network(self) -> Graph:
-        '''Return the networrk over which this signal is defined.
+        '''Return the network over which this signal is defined.
 
         :returns: the network'''
         return self._network
