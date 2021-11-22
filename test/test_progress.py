@@ -18,6 +18,7 @@
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
 import unittest
+from heapq import heappush, heappop
 from epydemic_signals import *
 from epydemic import SIR, StochasticDynamics, ProcessSequence, FixedNetwork
 from epyc import Experiment
@@ -204,7 +205,7 @@ class ProgressSignalTests(unittest.TestCase):
     def checkInvariants(self, g, evs):
         signal = SIRProgressSignal(g, evs)
         ns = list(g.nodes())
-        susceptibles = ns.copy()
+        susceptibles = set(ns.copy())
         infecteds = set()
         removeds = set()
         for (t, e, s) in evs:
@@ -231,10 +232,17 @@ class ProgressSignalTests(unittest.TestCase):
             # check all susceptibles are the right distance from the boundary
             self.checkSusceptibles(g, sig, susceptibles, infecteds, removeds)
 
+            # check all removeds are the right distance from the boundary
+            self.checkRemoveds(g, sig, susceptibles, infecteds, removeds)
+
+        #  check the end state
+        self.assertEqual(len(susceptibles), 0)
+        self.assertEqual(len(susceptibles) + len(removeds), g.order())
+
     def checkSusceptibles(self, g, sig, susceptibles, infecteds, removeds):
         ss = susceptibles.copy()
         while len(ss) > 0:
-            n = ss.pop(0)
+            n = ss.pop()
             #print(f'sus check {n}')
             d = sig[n]
             # all neighbours should have distances differing by at most one
@@ -246,6 +254,56 @@ class ProgressSignalTests(unittest.TestCase):
                     self.assertTrue(abs(sig[m] - d) <= 1)
                 elif m in infecteds:
                     self.assertEqual(d, 1)
+
+            # check our distance to the infected boundary is correct
+            self.assertEqual(d,
+                             self.shortestPath(g, n, infecteds, susceptibles))
+
+    def checkRemoveds(self, g, sig, susceptibles, infecteds, removeds):
+        rr = removeds.copy()
+        onpath = set(susceptibles).copy().union(set(removeds))
+        while len(rr) > 0:
+            n = rr.pop()
+            #print(f'sus check {n}')
+            d = sig[n]
+            # all neighbours should have distances differing by at most one
+            # from us (if they're removeds), or be infecteds (in which case
+            # our distance should be 1), or be susceptibles
+            for m in g.neighbors(n):
+                if m in removeds:
+                    #print(n, m, d, sig[m])
+                    self.assertTrue(abs(sig[m] - d) <= 1)
+                elif m in infecteds:
+                    self.assertEqual(d, -1)
+
+            # check our distance to the infected boundary is correct
+            dprime = self.shortestPath(g, n, infecteds, onpath)
+            if dprime is None:
+                # if we can't find a shortest path then there should be no infecteds left
+                self.assertEqual(len(infecteds), 0)
+            else:
+                # signal is 0 - shortest path
+                self.assertEqual(d, -dprime)
+
+    def shortestPath(self, g, n, targets, onpath):
+        distance = [(0, n)]
+        visited = set()
+        while len(distance) > 0:
+            (d, n) = heappop(distance)
+            visited.add(n)
+            dprime = d + 1
+            ms = g.neighbors(n)
+            for m in ms:
+                if m not in visited:
+                    if m in targets:
+                        # found a node in the target set
+                        return dprime
+                    else:
+                        if m in onpath:
+                            heappush(distance, (dprime, m))
+                        else:
+                            visited.add(m)
+        return None
 
 
 if __name__ == '__main__':
