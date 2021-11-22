@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-# Epidemic process vaariants
+# Epidemic process variants
 from .sir_healing import HealingSIR
 from .sir_healing_one import OneInfectionSIR
 
