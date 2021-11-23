@@ -52,6 +52,7 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 2)
         self.assertEqual(s[5], 3)
         self.assertEqual(s[6], 3)
+        self.assertEqual(self._signal.getTime(), 0.0)
 
     def testSlightlyBeyondBase(self):
         '''Test that times before the first transition stay like base.'''
@@ -62,6 +63,7 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 2)
         self.assertEqual(s[5], 3)
         self.assertEqual(s[6], 3)
+        self.assertEqual(self._signal.getTime(), 0.0)
 
     def testTransitionAt1(self):
         '''Test t=1.0.'''
@@ -72,6 +74,7 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 1)
         self.assertEqual(s[5], 2)
         self.assertEqual(s[6], 2)
+        self.assertEqual(self._signal.getTime(), 1.0)
 
     def testTransitionAt2(self):
         '''Test t=2.0.'''
@@ -112,6 +115,7 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 0)
         self.assertEqual(s[5], 1)
         self.assertEqual(s[6], 1)
+        self.assertEqual(self._signal.getTime(), 4.0)
 
     def testBackAndForward(self):
         '''Test that the signal backs-up correctly.'''
@@ -123,6 +127,31 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 1)
         self.assertEqual(s[5], 2)
         self.assertEqual(s[6], 2)
+
+    def testBackToZero(self):
+        '''Test we can return to zero.'''
+        s = self._signal[2.0]
+        self.assertEqual(s[1], -1)
+        self.assertEqual(s[2], 1)
+        self.assertEqual(s[3], 0)
+        self.assertEqual(s[4], 1)
+        self.assertEqual(s[5], 2)
+        self.assertEqual(s[6], 2)
+        s = self._signal[4.0]
+        self.assertEqual(s[1], -2)
+        self.assertEqual(s[2], 1)
+        self.assertEqual(s[3], -1)
+        self.assertEqual(s[4], 0)
+        self.assertEqual(s[5], 1)
+        self.assertEqual(s[6], 1)
+        s = self._signal[0.0]
+        self.assertEqual(s[1], 0)
+        self.assertEqual(s[2], 1)
+        self.assertEqual(s[3], 1)
+        self.assertEqual(s[4], 2)
+        self.assertEqual(s[5], 3)
+        self.assertEqual(s[6], 3)
+        self.assertEqual(self._signal.getTime(), 0.0)
 
 
     # ---------- Soak test ----------
@@ -169,8 +198,8 @@ class ProgressSignalTests(unittest.TestCase):
     def testInvariantsLattice(self):
         '''Test invariants for an epidemic on a lattice.'''
         g = convert_node_labels_to_integers(grid_graph(dim=(10, 10)), first_label=1)
-        pInfect = 0.5
-        pRemove = 0.01
+        pInfect = 0.8
+        pRemove = 0.1
 
         params = dict()
         params[SIR.P_INFECT] = pInfect
@@ -181,7 +210,7 @@ class ProgressSignalTests(unittest.TestCase):
         e = StochasticDynamics(p, FixedNetwork(g))
         rc = e.set(params).run(fatal=True)
         evs = HittingHealingTimes.timeline(rc)
-        self.checkInvariants(g, evs)
+        self.checkInvariants(g, evs, endState=True)
 
     def testInvariantsLarge(self):
         '''Test invariants as we run a larger epidemic.'''
@@ -200,9 +229,9 @@ class ProgressSignalTests(unittest.TestCase):
         e = StochasticDynamics(p, FixedNetwork(g))
         rc = e.set(params).run()
         evs = HittingHealingTimes.timeline(rc)
-        self.checkInvariants(g, evs)
+        self.checkInvariants(g, evs, endState=True)
 
-    def checkInvariants(self, g, evs):
+    def checkInvariants(self, g, evs, endState=False):
         signal = SIRProgressSignal(g, evs)
         ns = list(g.nodes())
         susceptibles = set(ns.copy())
@@ -235,9 +264,11 @@ class ProgressSignalTests(unittest.TestCase):
             # check all removeds are the right distance from the boundary
             self.checkRemoveds(g, sig, susceptibles, infecteds, removeds)
 
-        #  check the end state
-        self.assertEqual(len(susceptibles), 0)
-        self.assertEqual(len(susceptibles) + len(removeds), g.order())
+        if endState:
+            #  check the end state
+            self.assertEqual(len(susceptibles), 0)
+            self.assertEqual(len(susceptibles) + len(removeds), g.order())
+
 
     def checkSusceptibles(self, g, sig, susceptibles, infecteds, removeds):
         ss = susceptibles.copy()
