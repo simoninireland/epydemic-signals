@@ -108,42 +108,40 @@ class Signal:
         '''Return the current signal time.
 
         :returns: the time'''''
-        return self._diffs[self._index][0]
+        return self._transitions[self._index]
 
     def setTime(self, t: float):
-        '''Set the current signal time, applying diffs as necessary.
+        '''Set the current signal time, applying diffs as necessary. The
+        time is set to the nearest transition boundary less than or
+        equal to the time requested.
 
         :param t: the new time'''
         if t < 0:
             raise ValueError(f'Can\'t compute signal at negative time {t}')
-        i = self._index
-        if i is None:
+        if self._index is None:
             # initialise to the base signal
-            #print('base signal')
             self._signal = self._base.copy()
-            i = 0
+            self._index = 0
 
         # apply the necessary diffs
+        i = self._index
         current = self._transitions[i]
-        #print(f'current {current}')
         if t < current:
-            while t <= current and i >= 0:
-                current = self._transitions[i]
-                if t <= current:
-                    # step back
-                    #print(f'back {current}')
-                    self._applyBackwards(self._diffs[current])
-                    i -= 1
+            # before the current time
+            while self._transitions[self._index] > t:
+                self._applyBackwards(self._diffs[self._transitions[self._index]])
+                self._index -= 1
         elif t > current:
+            # after current time
             ndiffs = len(self._transitions)
-            while t >= current and i < ndiffs:
-                current = self._transitions[i]
-                if t >= current:
-                    # step forward
-                    #print(f'forward {current}')
-                    self._applyForwards(self._diffs[current])
-                    i += 1
+            while self._index < ndiffs - 1 and self._transitions[self._index + 1] <= t:
+                self._applyForwards(self._diffs[self._transitions[self._index + 1]])
+                self._index += 1
 
     def __getitem__(self, t: float) -> Dict[Node, float]:
+        '''Extract the mapping of the signal at the given time.
+
+        :param t: the time
+        :returns: a dict from nodes tto values'''
         self.setTime(t)
         return self._signal
