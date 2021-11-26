@@ -35,6 +35,9 @@ SOURCES_CODE = \
 	epydemic_signals/sir_healing_one.py \
 	epydemic_signals/hitting_healing.py \
 	epydemic_signals/signal.py \
+	epydemic_signals/signalgenerator.py \
+	epydemic_signals/signaldynamics.py \
+	epydemic_signals/stochasticsignaldynamics.py \
 	epydemic_signals/progress_signal.py \
 
 SOURCES_TESTS = \
