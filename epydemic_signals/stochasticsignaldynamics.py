@@ -1,4 +1,4 @@
-# Initialistion for the epydemic_signals package
+# A stochasitc dynamics with signal generation
 #
 # Copyright (C) 2021 Simon Dobson
 #
@@ -17,23 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-# Utilities
-from .timeddict import TimedDict
+from typing import Union
+from networkx import Graph
+from epydemic import StochasitcDynamics, Process, NetworkGenerator
+from epydemic_signals import SignalDynamics
 
-# Epidemic process variants
-from .sir_healing import HealingSIR
-from .sir_healing_one import OneInfectionSIR
 
-# Analysis mixins
-from .hitting_healing import HittingHealingTimes
+class StochasticSignalDynamics(StochasticDynamics, SignalDynamics):
+    '''A stochastic (Gillespie) dynamics that passes all events to
+    a signal generator.
 
-# Signals
-from .signal import Signal
+    :param p: the process to run
+    :param g: network or network generator (optional, can be provided later)'''
 
-# Signal generators and dynamics
-from .signalgenerator import SignalGenerator
-from .signaldynamics import SignalDynamics
-from .stochasticsignaldynamics import StochastcSignalDynamics
-
-# Specific signals and signal generators
-from .progress_signal import SIRProgressSignal
+    def __init__(self, p: Process, g: Union[Graph, NetworkGenerator] = None):
+        super().__init__(p, g)
