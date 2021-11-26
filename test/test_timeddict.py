@@ -34,6 +34,7 @@ class TimedDictTests(unittest.TestCase):
         self.assertCountEqual(d.keys(), [])
         self.assertCountEqual(d.values(), [])
         self.assertEqual(len(d), 0)
+        self.assertCountEqual(self._dict.updates(), [])
 
     def testAdd(self):
         '''Test adding at the same time.'''
@@ -165,6 +166,47 @@ class TimedDictTests(unittest.TestCase):
         self.assertEqual(len(d1.asdict()), 2)
         self.assertEqual(d1.asdict()['a'], 10)
         self.assertEqual(d1.asdict()['b'], 20)
+
+    def testUpdates(self):
+        '''Test retrieving update times.'''
+        d = self._dict[0]
+        d['a'] = 0
+        d = self._dict[1]
+        d['b'] = 20
+        del d['a']
+        d = self._dict[2]
+        del d['b']
+        d = self._dict[3]
+        # do nothing at this latest time
+
+        self.assertCountEqual(self._dict.updates(), [0, 1, 2])
+
+    def testAllKeys(self):
+        '''Test we can retrieve all keys over all times.'''
+        d = self._dict[0]
+        d['a'] = 0
+        d = self._dict[1]
+        d['b'] = 20
+        del d['a']
+        d = self._dict[2]
+        del d['b']
+        d = self._dict[3]
+
+        self.assertCountEqual(self._dict.keysAtSomeTime(), ['a', 'b'])
+
+    def testAllValues(self):
+        '''Test we can retrieve all values over all times.'''
+        d = self._dict[0]
+        d['a'] = 0
+        d = self._dict[1]
+        d['b'] = 20
+        d['b'] = 30
+        del d['a']
+        d = self._dict[2]
+        del d['b']
+        d = self._dict[3]
+
+        self.assertCountEqual(self._dict.valuesAtSomeTime(), [0, 30])
 
 
 if __name__ == '__main__':

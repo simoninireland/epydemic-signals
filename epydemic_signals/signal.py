@@ -20,52 +20,20 @@
 from typing import Dict, Any, List
 from networkx import Graph
 from epydemic import Node
+from epydemic_signals import TimedDict
 
 
 class Signal:
-    '''Encode a signal on a network. A signal is simply a value associated with
-    a time and a node. (Strictly speaking these should be called "node signals".)
+    '''Encode a signal on a network.
+
+    A signal -- or strictly speaking a node signal -- associates a mapping
+    from nodes to values for every point in time.
 
     :param g: the network'''
 
     def __init__(self, g: Graph):
-        self._network = g      # the network
-
-        # signal elements
-        self._base = dict()    # the signal at t = 0
-        self._diffs = dict()   # the diffs
-        self._transitions = [] # list of transition times
-        self._dirty = False    # True of the diffs need sorting
-        self._bounds = None    # max, min of signal
-
-        # signal access
-        self._signal = dict()  # the signal at the current time
-        self._index = None     # the current time index
-
-
-    # ---------- Encoding the signal ----------
-
-    def setBaseSignal(self, f: Dict[Node, float]):
-        '''Set the signal at time t = 0.
-
-        :parram f: a dict from node to value'''''
-        self._base = f.copy()
-        self._diffs = dict()
-        self._diffs[0.0] = dict()
-        self._transitions = [0.0]
-        self._dirty = False
-
-    def addDiff(self, t: float, vals: Dict[Node, float]):
-        '''Add a set of differences to the signal.
-
-        :param t: the time
-        :param vals: a dict of nodes to changes in value'''
-        self._diffs[t] = vals
-        self._transitions.append(t)
-        self._dirty = True
-
-    def setBounds(self, mn: float, mx: float):
-        self._bounds = [mn, mx]
+        self._network = g           # the network
+        self._dict = TimedDict()    # the mapping
 
 
     # ---------- Accessing the signal ----------
@@ -81,67 +49,21 @@ class Signal:
         ascending order.
 
         :returns: a list of times'''
-        if self._dirty:
-            # sort the diffs by time
-            self._transitions.sort()
-            self._dirty = False
-        return self._transitions
+        return self._dict.updates()
 
     def getBounds(self) -> List[float]:
-        return self._bounds
-
-    def _applyForwards(self, vals: Dict[Node, float]):
-        '''Apply diffs moving forwards in time.
-
-        :param vals: a dict of nodes to changes in value'''
-        for n in vals.keys():
-            self._signal[n] += vals[n]
-
-    def _applyBackwards(self, vals: Dict[Node, float]):
-        '''Apply diffs moving backwards in time.
-
-        :param vals: a dict of nodes to changes in value'''
-        for n in vals.keys():
-            self._signal[n] -= vals[n]
-
-    def getTime(self) -> float:
-        '''Return the current signal time.
-
-        :returns: the time'''''
-        return self._transitions[self._index]
-
-    def setTime(self, t: float):
-        '''Set the current signal time, applying diffs as necessary. The
-        time is set to the nearest transition boundary less than or
-        equal to the time requested.
-
-        :param t: the new time'''
-        if t < 0:
-            raise ValueError(f'Can\'t compute signal at negative time {t}')
-        if self._index is None:
-            # initialise to the base signal
-            self._signal = self._base.copy()
-            self._index = 0
-
-        # apply the necessary diffs
-        i = self._index
-        current = self._transitions[i]
-        if t < current:
-            # before the current time
-            while self._transitions[self._index] > t:
-                self._applyBackwards(self._diffs[self._transitions[self._index]])
-                self._index -= 1
-        elif t > current:
-            # after current time
-            ndiffs = len(self._transitions)
-            while self._index < ndiffs - 1 and self._transitions[self._index + 1] <= t:
-                self._applyForwards(self._diffs[self._transitions[self._index + 1]])
-                self._index += 1
+        vs = list(self._dict.valuesAtSomeTime())
+        if len(vs) > 2:
+            vs.sort()
+            return (vs[0], vs[-1])
+        elif len(vs) == 1:
+            return (vs[0], vs[0])
+        else:
+            raise ValueError('Empty signal')
 
     def __getitem__(self, t: float) -> Dict[Node, float]:
         '''Extract the mapping of the signal at the given time.
 
         :param t: the time
-        :returns: a dict from nodes tto values'''
-        self.setTime(t)
-        return self._signal
+        :returns: a dict from nodes to values'''
+        return self._dict[t]

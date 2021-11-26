@@ -31,10 +31,32 @@ class SignalTests(unittest.TestCase):
         self._g.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
         self._signal = Signal(self._g)
 
-    def test_NegativeTime(self):
-        '''Test we can't set the time negative.'''
-        with self.assertRaises(Exception):
-            self._signal.setTime(-1)
+    def testEmpty(self):
+        '''Test the properties of an empty signal.'''
+        self.assertCountEqual(self._signal.transitions(), [])
+        self.assertCountEqual(self._signal[0].keys(), [])
+        with self.assertRaises(ValueError):
+            self._signal.getBounds()
+
+    def testOnePointSignal(self):
+        '''Test the behaviour of a signal with one entry.'''
+        d = self._signal[0]
+        d['a'] = 10
+        s = self._signal[1]
+
+        self.assertCountEqual(self._signal.transitions(), [0])
+        self.assertEqual(self._signal.getBounds(), (10, 10))
+
+    def testTwoPointSignal(self):
+        '''Test the behaviour of a signal with two points.'''
+        d = self._signal[0]
+        d['a'] = 10
+        d['b'] = 30
+        d = self._signal[1]
+        d['b'] = 20
+
+        self.assertCountEqual(self._signal.transitions(), [0, 1])
+        self.assertEqual(self._signal.getBounds(), (10, 30))
 
 
 if __name__ == '__main__':

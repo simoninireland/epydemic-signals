@@ -17,9 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-from typing import Generic, TypeVar, Dict, Tuple, Any, List, Iterable
-from networkx import Graph
-from epydemic import Node
+from typing import Generic, TypeVar, Dict, Tuple, List, Iterable
+
+
+# The top-level class for this code is the TimedDict. This is howver a
+# very thin wrapper onto the TimmedDictView, which is the class that
+# actually implements the sequence of diffs used to represent time-varying
+# mappings.
 
 
 # Type variables for dict keys and values
@@ -203,6 +207,72 @@ class TimedDict(Generic[K, V]):
     def __init__(self):
         self._dict: Dict[K, List[Tuple[float, bool, V]]] = dict()
         self._time: float = 0.0
+
+
+    # ---------- access ----------
+
+    def updates(self) -> Iterable[float]:
+        '''Return a list of update times, in ascending order.
+        These are the points at which the signal changes in some way.
+
+        The signal can be queried at any time, not just these, so they're
+        not "keys" in any sense. However, the signal is guaranteed to have
+        changed in some way between adjacent updates, so they do represent
+        the "meaningful changes" to keys.
+
+        :returns: a list of times'''
+        ts = set()
+        for k in self._dict:
+            us = self._dict[k]
+            for (t, _, _) in us:
+                ts.add(t)
+        sts = list(ts)
+        sts.sort()
+        return sts
+
+    def keysAtSomeTime(self) -> Iterable[K]:
+        '''Return the set of keys that appear at some time in the dict.
+
+        :returns: a set of keys'''
+        return self._dict.keys()
+
+    def valuesAtSomeTime(self) -> Iterable[V]:
+        '''Return a set of the values that have been assigned to some kjey
+        at some time.
+
+        The values are all the values that can be retrieved at *some* time
+        from the dict. This *excludes* values that have been updated during
+        a given time. For example, the code:
+
+        .. code-block:: python
+
+           td = TimedDict()
+           d = td[0.0]
+           d['a'] = 1
+           d['b'] = 2
+           d['c'] = 5
+
+           d = td[1.0]
+           d['b'] = 3
+           d['b'] = 4
+
+           print(td.valuesAtSomeTime())
+
+        will print "1 2 5 4" (iin some udefined order), as "3" could
+        not now be found in the dict at any time (since it was
+        overwritten by 4).
+
+        :returns: a set of values
+
+        '''
+        vs = set()
+        for k in self._dict:
+            us = self._dict[k]
+            for (_, u, v) in us:
+                if u:
+                    # we're only concerned with updates, not deletions
+                    vs.add(v)
+        return vs
 
 
     # ---------- dict interface ----------
