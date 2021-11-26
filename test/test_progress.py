@@ -32,13 +32,16 @@ class ProgressSignalTests(unittest.TestCase):
         self._g.add_nodes_from([1, 2, 3, 4, 5, 6])
         self._g.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
 
-        self._evs = [(0.0, SIR.INFECTED, 1),
-                     (1.0, SIR.INFECTED, 3),
+        self._evs = [(0.0, SIR.INFECTED, (1, 0)),
+                     (1.0, SIR.INFECTED, (3, 1)),
                      (2.0, SIR.REMOVED, 1),
-                     (3.0, SIR.INFECTED, 4),
+                     (3.0, SIR.INFECTED, (4, 3)),
                      (4.0, SIR.REMOVED, 3)]
 
-        self._signal = SIRProgressSignal(self._g, self._evs)
+        self._signal = Signal(self._g)
+        self._generator = SIRProgressSignalGenerator(self._signal)
+        for (t, etype, e) in self._evs:
+            self._generator.event(t, etype, e)
 
 
     # ----------  Small tests ----------
@@ -52,7 +55,6 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 2)
         self.assertEqual(s[5], 3)
         self.assertEqual(s[6], 3)
-        self.assertEqual(self._signal.getTime(), 0.0)
 
     def testSlightlyBeyondBase(self):
         '''Test that times before the first transition stay like base.'''
@@ -63,7 +65,6 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 2)
         self.assertEqual(s[5], 3)
         self.assertEqual(s[6], 3)
-        self.assertEqual(self._signal.getTime(), 0.0)
 
     def testTransitionAt1(self):
         '''Test t=1.0.'''
@@ -74,7 +75,6 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 1)
         self.assertEqual(s[5], 2)
         self.assertEqual(s[6], 2)
-        self.assertEqual(self._signal.getTime(), 1.0)
 
     def testTransitionAt2(self):
         '''Test t=2.0.'''
@@ -115,7 +115,6 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 0)
         self.assertEqual(s[5], 1)
         self.assertEqual(s[6], 1)
-        self.assertEqual(self._signal.getTime(), 4.0)
 
     def testBackAndForward(self):
         '''Test that the signal backs-up correctly.'''
@@ -151,7 +150,6 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 2)
         self.assertEqual(s[5], 3)
         self.assertEqual(s[6], 3)
-        self.assertEqual(self._signal.getTime(), 0.0)
 
 
     # ---------- Soak test ----------
