@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# Utilities
+from .timeddict import TimedDict
+
 # Epidemic process variants
 from .sir_healing import HealingSIR
 from .sir_healing_one import OneInfectionSIR
