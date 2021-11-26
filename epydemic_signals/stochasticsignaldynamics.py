@@ -19,7 +19,7 @@
 
 from typing import Union
 from networkx import Graph
-from epydemic import StochasitcDynamics, Process, NetworkGenerator
+from epydemic import StochasticDynamics, Process, NetworkGenerator
 from epydemic_signals import SignalDynamics
 
 
