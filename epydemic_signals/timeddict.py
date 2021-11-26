@@ -285,3 +285,17 @@ class TimedDict(Generic[K, V]):
         :param t: the time
         :returns: a view of the dict at that time'''
         return TimedDictView(self._dict, t)
+
+    def __len__(self):
+        '''Return the number of transition points in the dict.
+        This is not the number of keys perr se, since the dict
+        can be queried for *any* time; ratherr it is the length
+        of the set returned by :meth:`updates`.
+
+        :returns: the number of update times'''
+        ts = set()
+        for k in self._dict:
+            us = self._dict[k]
+            for (t, _, _) in us:
+                ts.add(t)
+        return len(ts)

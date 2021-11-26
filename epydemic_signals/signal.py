@@ -67,3 +67,10 @@ class Signal:
         :param t: the time
         :returns: a dict from nodes to values'''
         return self._dict[t]
+
+    def __len__(self) -> int:
+        '''Return the number of transitions points in the signal, the
+        times when it changed.
+
+        :returns: the number of transitions'''
+        return len(self._dict)

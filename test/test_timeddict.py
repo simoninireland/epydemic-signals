@@ -33,6 +33,7 @@ class TimedDictTests(unittest.TestCase):
         d = self._dict[0]
         self.assertCountEqual(d.keys(), [])
         self.assertCountEqual(d.values(), [])
+        self.assertEqual(len(self._dict), 0)
         self.assertEqual(len(d), 0)
         self.assertCountEqual(self._dict.updates(), [])
 
