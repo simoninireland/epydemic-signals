@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-from epydemic import Element, NNode, Edge
+from typing import Callable
+from epydemic import Element, Node, Edge
 from epydemic_signals import Signal
 
 
@@ -30,8 +31,15 @@ class SignalGenerator:
     attached to a signal dynamics to repond to the events generated
     by a simulation, generating the corresponding signal.'''
 
-    def __init__(self):
+    def __init__(self, s: Signal = None):
+        self._signal = s
         self._typeHandler: Dict[str, EventHandler] = dict()
+
+    def signal(self) -> Signal:
+        '''The signal being generated.
+
+        :returns: the signal'''
+        return self._signal
 
     def addEventTypeHandler(self, etype: str, eh: EventHandler):
         '''Register a handler for the given event. The handler is called
