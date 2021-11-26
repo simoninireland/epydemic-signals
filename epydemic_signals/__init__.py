@@ -33,7 +33,7 @@ from .signal import Signal
 # Signal generators and dynamics
 from .signalgenerator import SignalGenerator
 from .signaldynamics import SignalDynamics
-from .stochasticsignaldynamics import StochastcSignalDynamics
+from .stochasticsignaldynamics import StochasticSignalDynamics
 
 # Specific signals and signal generators
-from .progress_signal import SIRProgressSignal
+from .progress_signal import SIRProgressSignalGenerator
