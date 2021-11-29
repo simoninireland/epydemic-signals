@@ -38,13 +38,15 @@ SOURCES_CODE = \
 	epydemic_signals/signalgenerator.py \
 	epydemic_signals/signaldynamics.py \
 	epydemic_signals/stochasticsignaldynamics.py \
+	epydemic_signals/compartment_signal.py \
 	epydemic_signals/progress_signal.py \
 
 SOURCES_TESTS = \
 	test/__init__.py \
 	test/test_timeddict.py \
 	test/test_signal.py \
-	test/test_progress.py
+	test/test_progress.py \
+	test/test_stochasticsignalgenerator.py
 
 SOURCES_DOC_CONF = doc/conf.py
 SOURCES_DOC_BUILD_DIR = doc/_build

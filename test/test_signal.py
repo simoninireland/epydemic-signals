@@ -29,7 +29,7 @@ class SignalTests(unittest.TestCase):
         self._g = networkx.Graph()
         self._g.add_nodes_from([1, 2, 3, 4, 5, 6])
         self._g.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
-        self._signal = Signal(self._g)
+        self._signal = Signal(None)
 
     def testEmpty(self):
         '''Test the properties of an empty signal.'''

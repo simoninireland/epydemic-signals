@@ -38,8 +38,17 @@ class ProgressSignalTests(unittest.TestCase):
                      (3.0, SIR.INFECTED, (4, 3)),
                      (4.0, SIR.REMOVED, 3)]
 
-        self._signal = Signal(self._g)
+        self._p = SIR()
+        self._e = StochasticDynamics(self._p, FixedNetwork(self._g))
+        self._e.setNetwork((self._g))
+        self._params = dict({SIR.P_INFECTED: 0.0,
+                             SIR.P_INFECT: 0.0,
+                             SIR.P_REMOVE: 0.0})
+        self._signal = Signal(self._p)
         self._generator = SIRProgressSignalGenerator(self._signal)
+        self._p.build(self._params)
+        self._p.setUp(self._params)
+        self._generator.setUp()
         for (t, etype, e) in self._evs:
             self._generator.event(t, etype, e)
 
@@ -151,20 +160,39 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[5], 3)
         self.assertEqual(s[6], 3)
 
+    def testSetUp(self):
+        '''Test we transfer initial compartments properly.'''
+        self._p = SIR()
+        self._e = StochasticDynamics(self._p, FixedNetwork(self._g))
+        self._p.setNetwork(self._g)
+        self._p.build(self._params)
+        self._p.setUp(self._params)
+        self._p.setCompartment(1, SIR.INFECTED)
+        signal = Signal(self._p)
+        gen = SIRProgressSignalGenerator(signal)
+        gen.setUp()
+        s = signal[0.0]
+        self.assertEqual(s[1], 0)
+        self.assertEqual(s[2], 1)
+        self.assertEqual(s[3], 1)
+        self.assertEqual(s[4], 2)
+        self.assertEqual(s[5], 3)
+        self.assertEqual(s[6], 3)
 
-    # ---------- Soak test ----------
+
+    # ---------- Soak tests ----------
 
     def testInvariantsAdd(self):
         '''Test invariants when adding infected nodes.'''
         g = Graph()
         g.add_nodes_from([1, 2, 3, 4, 5, 6])
         g.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
-        evs = [(0.0, SIR.INFECTED, 1),
-               (1.0, SIR.INFECTED, 3),
-               (2.0, SIR.INFECTED, 5),
-               (3.0, SIR.INFECTED, 4),
-               (4.0, SIR.INFECTED, 2),
-               (5.0, SIR.INFECTED, 6)]
+        evs = [(0.0, SIR.INFECTED, (1, None)),
+               (1.0, SIR.INFECTED, (3, None)),
+               (2.0, SIR.INFECTED, (5, None)),
+               (3.0, SIR.INFECTED, (4, None)),
+               (4.0, SIR.INFECTED, (2, None)),
+               (5.0, SIR.INFECTED, (6, None))]
         self.checkInvariants(g, evs)
 
     def testInvariantsRemove(self):
@@ -172,12 +200,12 @@ class ProgressSignalTests(unittest.TestCase):
         g = Graph()
         g.add_nodes_from([1, 2, 3, 4, 5, 6])
         g.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
-        evs = [(0.0, SIR.INFECTED, 1),
-               (1.0, SIR.INFECTED, 3),
-               (2.0, SIR.INFECTED, 5),
-               (3.0, SIR.INFECTED, 4),
-               (4.0, SIR.INFECTED, 2),
-               (5.0, SIR.INFECTED, 6),
+        evs = [(0.0, SIR.INFECTED, (1, None)),
+               (1.0, SIR.INFECTED, (3, None)),
+               (2.0, SIR.INFECTED, (5, None)),
+               (3.0, SIR.INFECTED, (4, None)),
+               (4.0, SIR.INFECTED, (2, None)),
+               (5.0, SIR.INFECTED, (6, None)),
                (6.0, SIR.REMOVED, 4),
                (7.0, SIR.REMOVED, 5),
                (8.0, SIR.REMOVED, 1),
@@ -189,64 +217,41 @@ class ProgressSignalTests(unittest.TestCase):
     def testInvariantsLatticeManual(self):
         '''Test invariants on a larger network.'''
         g = convert_node_labels_to_integers(grid_graph(dim=(6, 6)), first_label=1)
-        evs = [(0.0, SIR.INFECTED, 21),
-               (1.0, SIR.INFECTED, 22)]
+        evs = [(0.0, SIR.INFECTED, (21, None)),
+               (1.0, SIR.INFECTED, (22, 21))]
         self.checkInvariants(g, evs)
 
-    def testInvariantsLattice(self):
-        '''Test invariants for an epidemic on a lattice.'''
-        g = convert_node_labels_to_integers(grid_graph(dim=(10, 10)), first_label=1)
-        pInfect = 0.8
-        pRemove = 0.1
-
-        params = dict()
-        params[SIR.P_INFECT] = pInfect
-        params[SIR.P_REMOVE] = pRemove
-
-        sir = OneInfectionSIR()
-        p = ProcessSequence([sir, HittingHealingTimes(sir)])
-        e = StochasticDynamics(p, FixedNetwork(g))
-        rc = e.set(params).run(fatal=True)
-        evs = HittingHealingTimes.timeline(rc)
-        self.checkInvariants(g, evs, endState=True)
-
-    def testInvariantsLarge(self):
-        '''Test invariants as we run a larger epidemic.'''
-        N = 2000
-        kmean = 50
-        g = fast_gnp_random_graph(N, kmean / N)
-        pInfect = 0.01
-        pRemove = 0.001
-
-        params = dict()
-        params[SIR.P_INFECT] = pInfect
-        params[SIR.P_REMOVE] = pRemove
-
-        sir = OneInfectionSIR()
-        p = ProcessSequence([sir, HittingHealingTimes(sir)])
-        e = StochasticDynamics(p, FixedNetwork(g))
-        rc = e.set(params).run()
-        evs = HittingHealingTimes.timeline(rc)
-        self.checkInvariants(g, evs, endState=True)
-
     def checkInvariants(self, g, evs, endState=False):
-        signal = SIRProgressSignal(g, evs)
+        p = SIR()
+        x = StochasticDynamics(p, FixedNetwork(g))
+        x.setNetwork((g))
+        params = dict({SIR.P_INFECTED: 0.0,
+                       SIR.P_INFECT: 0.0,
+                       SIR.P_REMOVE: 0.0})
+        p.build(self._params)
+        p.setUp(self._params)
+        signal = Signal(p)
+        generator = SIRProgressSignalGenerator(signal)
+        generator.setUp()
+
         ns = list(g.nodes())
         susceptibles = set(ns.copy())
         infecteds = set()
         removeds = set()
-        for (t, e, s) in evs:
-            #print(t, e, s)
+        for (t, etype, e) in evs:
+            #print(t, etype, e)
+            generator.event(t, etype, e)
             sig = signal[t]
 
             # advance the sets
-            self.assertIn(e, [SIR.INFECTED, SIR.REMOVED])
-            if e == SIR.INFECTED:
+            self.assertIn(etype, [SIR.INFECTED, SIR.REMOVED])
+            if etype == SIR.INFECTED:
+                (s, _) = e
                 susceptibles.remove(s)
                 infecteds.add(s)
-            elif e == SIR.REMOVED:
-                infecteds.remove(s)
-                removeds.add(s)
+            elif etype == SIR.REMOVED:
+                infecteds.remove(e)
+                removeds.add(e)
 
             # test all nodes have an entry in the signal
             self.assertCountEqual(ns, sig.keys())
@@ -295,6 +300,7 @@ class ProgressSignalTests(unittest.TestCase):
             n = rr.pop()
             #print(f'sus check {n}')
             d = sig[n]
+            #print(f'd = {d}')
             # all neighbours should have distances differing by at most one
             # from us (if they're removeds), or be infecteds (in which case
             # our distance should be 1), or be susceptibles

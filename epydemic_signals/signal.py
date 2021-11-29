@@ -19,7 +19,7 @@
 
 from typing import Dict, Any, List
 from networkx import Graph
-from epydemic import Node
+from epydemic import Node, Process
 from epydemic_signals import TimedDict
 
 
@@ -31,9 +31,9 @@ class Signal:
 
     :param g: the network'''
 
-    def __init__(self, g: Graph):
-        self._network = g           # the network
-        self._dict = TimedDict()    # the mapping
+    def __init__(self, p: Process):
+        self._process = p
+        self._dict = TimedDict()
 
 
     # ---------- Accessing the signal ----------
@@ -42,7 +42,13 @@ class Signal:
         '''Return the network over which this signal is defined.
 
         :returns: the network'''
-        return self._network
+        return self.process().network()
+
+    def process(self) -> Process:
+        '''Return the process this siignal is being generated from..
+
+        :returns: the process'''
+        return self._process
 
     def transitions(self) -> List[float]:
         '''Return a list of times at which the signal changes, in

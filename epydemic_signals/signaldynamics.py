@@ -22,22 +22,41 @@ from epydemic_signals import SignalGenerator
 
 class SignalDynamics:
     '''A mixin class used to add a "tap" for an event stream to a
-    :class:`NetworkDynamics` class.'''
+    :class:`NetworkDynamics` sub-class. The :meth:`initialiseSignalGenerators`
+    method should be called from the constructor.'''
 
-    def __init__(self):
-        super().__init__()
-        self._generator = None
+    # ---------- Taps ----------
 
-    def setSignalGenerator(self, gen: SignalGenerator):
-        '''Set the signal generator that will be passed events.
+    def initialiseEventTaps(self):
+        '''Set up the signal generation tap framework.'''
+        print('init')
+        self._signalGenerators = []
+
+    def addSignalGenerator(self, gen: SignalGenerator):
+        '''Add a signal generator that will be passed events.
 
         :param gen: the signal generator'''
-        self._generator = gen
+        self._signalGenerators.append(gen)
+
+
+    # ---------- Tap method overrides ----------
+
+    def simulationStarted(self):
+        '''Notify the signal generators that the simulation has started.'''
+        for gen in self._signalGenerators:
+            gen.setUp()
+
+    def simulationEnded(self):
+        '''Notify the signal generators that the simulation has ended.'''
+        for gen in self._signalGenerators:
+            gen.tearDown()
 
     def eventFired(self, t: float, etype: str, e: Element):
-        '''Pass all fired events to the signal generator.
+        '''Pass a fired event to the signal generators.
 
         :param t: the simulation time
         :param etype: the event type
         :param e: the element'''
-        self._generator.event(t, etype, e)
+        for gen in self._signalGenerators:
+            print(gen)
+            gen.event(t, etype, e)

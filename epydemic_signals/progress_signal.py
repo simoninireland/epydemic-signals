@@ -18,26 +18,22 @@
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
 from heapq import heappush, heappop
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, cast
 from networkx import Graph, single_source_shortest_path
-from epydemic import Node, Edge, SIR
+from epydemic import Node, Edge, SIR, Process, CompartmentedModel
 from epydemic_signals import Signal, SignalGenerator
 
 
 class SIRProgressSignalGenerator(SignalGenerator):
     '''Create the progress signal for an SIR epidemic.
 
-    :param g: the network
-    :param df: the event stream of (time, event, node) triples
+    :param s: the signal
     '''
 
     def __init__(self, s: Signal):
         super().__init__(s)
-        g = self.network()
-        self._inf = g.order() + 1           # a distance longer than the longest possible path
-        self._susceptibles = set(g.nodes())
-        self._removeds = set()
-        self._infecteds = set()
+        self._inf = None
+        self._compartment = dict()
         self._boundary = dict()
         self._coboundary_S = dict()
         self._coboundary_R = dict()
@@ -46,42 +42,37 @@ class SIRProgressSignalGenerator(SignalGenerator):
         self.addEventTypeHandler(SIR.INFECTED, self.infect)
         self.addEventTypeHandler(SIR.REMOVED, self.remove)
 
-    def infect(self, t: float, e: Edge):
-        '''Adjust the signal for an infection event.
+    def setUp(self):
+        '''Capture the initial state of the network as susceptible, infected,
+        and removed sets.
 
-        :param t: the event time
-        :param e: the SI edge the infection passed over'''
-        (s, _) = e
-        g = self.network()
-        signal = self.signal()[t]
+        :param g: the network
+        :param p: the process'''
+        s = self.signal()
+        g = s.network()
+        p = s.process()
+        signal = s[0.0]
 
-        if len(self._signal) == 0:
-            # this is the first event
-            paths = single_source_shortest_path(g, s)
-            for m in paths.keys():
-                signal[m] = len(paths[m]) - 1
-                if m != s:
-                    self._boundary[m] = s            # s is the only infected at this stage
-            self._susceptibles.remove(s)
-            self._infecteds.add(s)
-            self._coboundary_S[s] = self._susceptibles.copy()
-            self._coboundary_R[s] = set()
-        else:
-            # update state
-            self._susceptibles.remove(s)
-            self._coboundary_S[self._boundary[s]].remove(s)
-            del self._boundary[s]
-            self._infecteds.add(s)
+        self._inf = g.order() + 1           # a distance longer than the longest possible path
+        self._compartment = dict()
+        self._compartment[SIR.SUSCEPTIBLE] = set()
+        self._compartment[SIR.INFECTED] = set()
+        self._compartment[SIR.REMOVED] = set()
 
-            # set signal at s
+        # extract the initial states
+        cm = cast(CompartmentedModel, p)
+        for n in g.nodes():
+            self._compartment[cm.getCompartment(n)].add(n)
+            #print(n,  cm.getCompartment(n))
+
+        # signal is initially infinite everywhere
+        for n in g.nodes():
+            signal[n] = self._inf
+
+        # compute the initial signal at t=0
+        #print('initial infecteds')
+        for s in self._compartment[SIR.INFECTED]:
             signal[s] = 0
-
-            # iterate all susceptible and removed nodes updating signal as the
-            # shortest path length to an infected node
-            # This is a modified Dijkstra's algorithm that prunes the
-            # search tree if it encounters a node whose proposed distance
-            # is greater than the distance it has in the signal already
-            #print('Phase I-1')
             distance = [(0, s)]
             visited = set()
             self._coboundary_S[s] = set()
@@ -94,7 +85,7 @@ class SIRProgressSignalGenerator(SignalGenerator):
                     d = 1 + signal[n]
                     for m in g.neighbors(n):
                         if m not in visited:
-                            if m in self._susceptibles:
+                            if m in self._compartment[SIR.SUSCEPTIBLE]:
                                 if d < signal[m]:
                                     # update the signal
                                     signal[m] = d
@@ -102,7 +93,8 @@ class SIRProgressSignalGenerator(SignalGenerator):
                                     #print(f'propose {m} distance {d}')
 
                                     # update the boundary
-                                    self._coboundary_S[self._boundary[m]].remove(m)
+                                    if m in self._boundary:
+                                        self._coboundary_S[self._boundary[m]].remove(m)
                                     self._boundary[m] = s
                                     self._coboundary_S[s].add(m)
                                     #print(f'Sus boundary of {m} now {s}')
@@ -111,42 +103,107 @@ class SIRProgressSignalGenerator(SignalGenerator):
                                     #print(f'prune {m}')
                                     #visited.add(m)
                                     pass
-                            elif m in self._removeds:
-                                if -d > signal[m]:
-                                    # update the signal
-                                    signal[m] = -d
-                                    heappush(distance, (d, m))
-
-                                    # update the boundary
-                                    self._coboundary_R[self._boundary[m]].remove(m)
-                                    self._boundary[m] = s
-                                    self._coboundary_R[s].add(m)
-                                    #print(f'Rem boundary of {m} now {s}')
-                                else:
-                                    #visited.add(m)
-                                    pass
                             else:
                                 # prune the tree
                                 #print(f'prune {m}')
                                 visited.add(m)
-            #print(f'Sus coboundary of {s} now', coboundary_S[s], 'signal', signal[s], diff[s])
-            #print(f'Rem coboundary of {s} now', coboundary_R[s])
+        #print('initial signal')
+        #for n in g.nodes():
+        #    print(n, signal[n])
+
+    def infect(self, t: float, e: Edge):
+        '''Adjust the signal for an infection event.
+
+        :param t: the event time
+        :param e: the SI edge the infection passed over'''
+        (s, _) = e
+        g = self.network()
+        signal = self.signal()[t]
+
+        # update state
+        self._compartment[SIR.SUSCEPTIBLE].remove(s)
+        if s in self._boundary:
+            # s has a boundary, remove it from that node's co-boundary
+            self._coboundary_S[self._boundary[s]].remove(s)
+            del self._boundary[s]
+
+            # (The only way s will *not* have a boundary is if the initial
+            # state of the network was all susceptibles with no infecteds.
+            # It might be worth handling this as a special case?)
+        self._compartment[SIR.INFECTED].add(s)
+
+        # set signal at s
+        signal[s] = 0
+
+        # iterate all susceptible and removed nodes updating signal as the
+        # shortest path length to an infected node
+        # This is a modified Dijkstra's algorithm that prunes the
+        # search tree if it encounters a node whose proposed distance
+        # is greater than the distance it has in the signal already
+        #print('Phase I-1')
+        distance = [(0, s)]
+        visited = set()
+        self._coboundary_S[s] = set()
+        self._coboundary_R[s] = set()
+        while len(distance) > 0:
+            (_, n) = heappop(distance)
+            if n not in visited:
+                #print(f'visit {n}')
+                visited.add(n)
+                d = 1 + signal[n]
+                for m in g.neighbors(n):
+                    if m not in visited:
+                        if m in self._compartment[SIR.SUSCEPTIBLE]:
+                            if d < signal[m]:
+                                # update the signal
+                                signal[m] = d
+                                heappush(distance, (d, m))
+                                #print(f'propose {m} distance {d}')
+
+                                # update the boundary
+                                if m in self._boundary:
+                                    self._coboundary_S[self._boundary[m]].remove(m)
+                                self._boundary[m] = s
+                                self._coboundary_S[s].add(m)
+                                #print(f'Sus boundary of {m} now {s}')
+                            else:
+                                # prune the tree
+                                #print(f'prune {m}')
+                                #visited.add(m)
+                                pass
+                        elif m in self._compartment[SIR.REMOVED]:
+                            if -d > signal[m]:
+                                # update the signal
+                                signal[m] = -d
+                                heappush(distance, (d, m))
+
+                                # update the boundary
+                                self._coboundary_R[self._boundary[m]].remove(m)
+                                self._boundary[m] = s
+                                self._coboundary_R[s].add(m)
+                                #print(f'Rem boundary of {m} now {s}')
+                            else:
+                                #visited.add(m)
+                                pass
+                        else:
+                            # prune the tree
+                            #print(f'prune {m}')
+                            visited.add(m)
+        #print(f'Sus coboundary of {s} now', coboundary_S[s], 'signal', signal[s], diff[s])
+        #print(f'Rem coboundary of {s} now', coboundary_R[s])
 
     def remove(self, t: float, s: Node):
         '''Adjust the signal for a removal event.
 
         :param t: the event time
         :param n: the node'''
+        #print(f'remove {s}')
         g = self.network()
         signal = self._signal[t]
 
-        if len(self._signal) == 0:
-            # this is the first event, which is odd...
-            raise Exception('First event is not an infection event?')
-
         # removal event, update state
-        self._infecteds.remove(s)
-        self._removeds.add(s)
+        self._compartment[SIR.INFECTED].remove(s)
+        self._compartment[SIR.REMOVED].add(s)
 
         # re-compute all susceptible distances affected by our removal
         # This is a breadth-first traverse, through susceptible nodes only,
@@ -161,7 +218,7 @@ class SIRProgressSignalGenerator(SignalGenerator):
                 if n not in visited:
                     #print(f'visit {n}')
                     visited.add(n)
-                    if n in self._infecteds:
+                    if n in self._compartment[SIR.INFECTED]:
                         # found an infected, store new closest node
                         self._boundary[q] = n
                         self._coboundary_S[n].add(q)
@@ -179,62 +236,62 @@ class SIRProgressSignalGenerator(SignalGenerator):
                         # terminate traverse
                         break
                     for m in g.neighbors(n):
-                        if m not in self._removeds and m not in visited:
+                        if m not in self._compartment[SIR.REMOVED] and m not in visited:
                             distance.append((d + 1, m))
-            del self._coboundary_S[s]
+        del self._coboundary_S[s]
 
-            # find distance from removed node to boundary
-            # This is a breadth-first traverse
-            # that stops when it finds an infected node at distance d
-            #print('Phase R-2')
-            distance = [(0, s)]
+        # find distance from removed node to boundary
+        # This is a breadth-first traverse
+        # that stops when it finds an infected node at distance d
+        #print('Phase R-2')
+        distance = [(0, s)]
+        visited = set()
+        while len(distance) > 0:
+            (d, n) = distance.pop(0)
+            if n not in visited:
+                visited.add(n)
+                if n in self._compartment[SIR.INFECTED]:
+                    # found an infected,  update signal at newly removed node
+                    signal[s] = -d
+
+                    # store this as our boundary
+                    self._boundary[s] = n
+                    self._coboundary_R[n].add(s)
+                    #print(f'boundary of {s} {n} signal', signal[s])
+
+                    # stop the traverse
+                    break
+                for m in g.neighbors(n):
+                    if m not in visited:
+                        distance.append((d + 1, m))
+
+        # update the signal for all other removed nodes
+        # Again, this is a breadth-first traverse modified to prune branches
+        # that can't change the signal
+        #print('Phase R-3')
+        for q in self._coboundary_R[s]:
+            distance = [(0, q)]
             visited = set()
             while len(distance) > 0:
                 (d, n) = distance.pop(0)
                 if n not in visited:
+                    #print(f'visit {n}')
                     visited.add(n)
-                    if n in self._infecteds:
-                        # found an infected,  update signal at newly removed node
-                        signal[s] = -d
+                    if n in self._compartment[SIR.INFECTED]:
+                        # found an infected, update signal
+                        signal[q] = -d
 
                         # store this as our boundary
-                        self._boundary[s] = n
-                        self._coboundary_R[n].add(s)
-                        #print(f'boundary of {s} {n} signal', signal[s], diff[s])
+                        self._boundary[q] = n
+                        self._coboundary_R[n].add(q)
+                        #print(f'boundary of {q} {n} distance -{d}')
 
                         # stop the traverse
                         break
                     for m in g.neighbors(n):
                         if m not in visited:
                             distance.append((d + 1, m))
-
-            # update the signal for all other removed nodes
-            # Again, this is a breadth-first traverse modified to prune branches
-            # that can't change the signal
-            #print('Phase R-3')
-            for q in self._coboundary_R[s]:
-                distance = [(0, q)]
-                visited = set()
-                while len(distance) > 0:
-                    (d, n) = distance.pop(0)
-                    if n not in visited:
-                        #print(f'visit {n}')
-                        visited.add(n)
-                        if n in self._infecteds:
-                            # found an infected, update signal
-                            signal[q] = -d
-
-                            # store this as our boundary
-                            self._boundary[q] = n
-                            self._coboundary_R[n].add(q)
-                            #print(f'boundary of {q} {n} distance -{d}')
-
-                            # stop the traverse
-                            break
-                        for m in g.neighbors(n):
-                            if m not in visited:
-                                distance.append((d + 1, m))
-            del self._coboundary_R[s]
+        del self._coboundary_R[s]
 
         # for n in g.nodes():
         #     print(f'node {n}:')

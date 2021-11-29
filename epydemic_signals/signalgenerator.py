@@ -19,12 +19,12 @@
 
 from typing import Callable
 from networkx import Graph
-from epydemic import Element, Node, Edge
+from epydemic import Element, Node, Edge, Process
 from epydemic_signals import Signal
 
 
 # Types for handling events
-EventHandler =  Callable[[float, Element], None]   #: Type of event-handler function.
+EventHandler = Callable[[float, Element], None]   #: Type of event-handler function.
 
 
 class SignalGenerator:
@@ -36,7 +36,6 @@ class SignalGenerator:
 
     def __init__(self, s: Signal):
         self._signal = s
-        self._network = s.network()
         self._typeHandler: Dict[str, EventHandler] = dict()
 
     def signal(self) -> Signal:
@@ -46,10 +45,13 @@ class SignalGenerator:
         return self._signal
 
     def network(self) -> Graph:
-        '''Return the network the signal is being genearted for.
+        '''Return the network the signal is being generated over.
 
         :returns: the network'''
-        return self._network
+        return self.signal().network()
+
+
+    # ---------- Event type registration ----------
 
     def addEventTypeHandler(self, etype: str, eh: EventHandler):
         '''Register a handler for the given event. The handler is called
@@ -66,6 +68,23 @@ class SignalGenerator:
             # add the handler
             self._typeHandler[etype] = [eh]
 
+
+    # ---------- Tap methods ----------
+
+    def setUp(self):
+        '''Notify the signal generator that the simulation has started.
+        This can be overridden by sub-classes to get the generator ready
+        to record the signal. The default does nothing.
+        '''
+        pass
+
+    def tearDown(self):
+        '''Notify the signal generator that the simulation has ended.
+        This can be overridden by sub-classes to destroy any working
+        data structures, close or write to files. The default does nothing.
+        '''
+        pass
+
     def event(self, t: float, etype: str, e: Element):
         '''Respond to the given event. Events are dispatched to the
         handlers registered for them: any events for which there is no
@@ -74,7 +93,6 @@ class SignalGenerator:
         :param t: the simulation time
         :param etype: the event type
         :param e: the element'''
-        print(t, etype, e)
         ehs = self._typeHandler.get(etype, [])
         for eh in ehs:
             eh(t, e)
