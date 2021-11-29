@@ -110,7 +110,7 @@ class TimedDictView(Generic[K, V]):
         '''Test whether the given k is defined at the current time.
 
         :param k: the keyed:returns: True if the key is in the dict at the current time'''
-        return k in self._keys()
+        return k in self.keys()
 
     def values(self) -> Iterable[V]:
         '''Return a list oif values in the dict at the current time.
