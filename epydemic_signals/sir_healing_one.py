@@ -26,12 +26,15 @@ class OneInfectionSIR(HealingSIR):
     '''A :class:`HealingSIR` model with a single randomly-chosen point of
     infection.'''
 
+    SEED = 'seed-infected'
+
     def build(self, params: Dict[str, Any]):
         '''Make sure there's no random infection.
 
         :param params: the experimental parameters'''
         params[self.P_INFECTED] = 0.0
         super().build(params)
+        self._seed = None
 
     def initialCompartments(self):
         '''Select a single node to infect.'''
@@ -45,8 +48,14 @@ class OneInfectionSIR(HealingSIR):
         n = ns[i]
         self.changeInitialCompartment(n, self.INFECTED)
         self.markHit(n, 0.0)
+        self._seed = n
 
         # mark all other nodes as susceptible
         del ns[i]
         for n in ns:
             self.changeInitialCompartment(n, self.SUSCEPTIBLE)
+
+    def results(self):
+        rc = super().results()
+        rc[self.SEED] = self._seed
+        return rc
