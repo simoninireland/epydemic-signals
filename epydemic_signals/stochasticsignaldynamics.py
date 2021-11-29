@@ -23,7 +23,7 @@ from epydemic import StochasticDynamics, Process, NetworkGenerator
 from epydemic_signals import SignalDynamics
 
 
-class StochasticSignalDynamics(StochasticDynamics, SignalDynamics):
+class StochasticSignalDynamics(SignalDynamics, StochasticDynamics):
     '''A stochastic (Gillespie) dynamics that passes all events to
     a signal generator.
 
