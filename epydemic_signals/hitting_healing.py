@@ -87,9 +87,9 @@ class HittingHealingTimes(Process):
         evs = []
         while len(hitting_ts) > 0 and len(healing_ts) > 0:
             if hitting_ts[0] < healing_ts[0]:
-                evs.append((hitting_ts.pop(0), SIR.INFECTED, hitting_ns.pop(0)))
+                evs.append((hitting_ts.pop(0), SIR.INFECTED, (hitting_ns.pop(0), None)))
             else:
-                evs.append((healing_ts.pop(0), SIR.REMOVED, healing_ns.pop(0)))
+                evs.append((healing_ts.pop(0), SIR.REMOVED, (healing_ns.pop(0), None)))
         while len(hitting_ts) > 0:
             evs.append((hitting_ts.pop(0), SIR.INFECTED, hitting_ns.pop(0)))
         while len(healing_ts) > 0:
