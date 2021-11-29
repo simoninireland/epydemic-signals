@@ -25,11 +25,10 @@ class SignalDynamics:
     :class:`NetworkDynamics` sub-class. The :meth:`initialiseSignalGenerators`
     method should be called from the constructor.'''
 
-    # ---------- Taps ----------
+    # ---------- Taps management ----------
 
     def initialiseEventTaps(self):
         '''Set up the signal generation tap framework.'''
-        print('init')
         self._signalGenerators = []
 
     def addSignalGenerator(self, gen: SignalGenerator):
@@ -58,5 +57,4 @@ class SignalDynamics:
         :param etype: the event type
         :param e: the element'''
         for gen in self._signalGenerators:
-            print(gen)
             gen.event(t, etype, e)
