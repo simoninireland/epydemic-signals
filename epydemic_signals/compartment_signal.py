@@ -32,7 +32,7 @@ class CompartmentSignalGenerator(SignalGenerator):
     def __init__(self, s: Signal):
         super().__init__(s)
 
-    def captureCompartments(self, t):
+    def captureCompartments(self, t: float):
         '''Capture the state of the network in terms of compartments. The
         signal for a node at time t is simply its compartment at that time.
 
