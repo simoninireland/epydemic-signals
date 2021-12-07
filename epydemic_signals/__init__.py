@@ -37,3 +37,4 @@ from .stochasticsignaldynamics import StochasticSignalDynamics
 
 # Specific signals and signal generators
 from .progress_signal import SIRProgressSignalGenerator
+from .infection_boundary_signal import InfectionBoundarySignalGenerator
