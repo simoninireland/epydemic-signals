@@ -38,16 +38,16 @@ class TimedDictView(Generic[K, V]):
     :param t: the time'''
 
     def __init__(self, d: Dict[K, List[Tuple[float, bool, V]]], t : float):
-        self._dict = d                     # diff from key to diff list
+        self._dict = d                     # dict from key to diff list
         self._time = t                     # projection time
-        self._now: Dict[K, int] = dict()   # dict of key to index in diff list of last update in diff list
+        self._now: Dict[K, int] = dict()   # dict from key to index in diff list of last update in diff list
         self._project()
 
 
     # ---------- projection ----------
 
     def _project(self):
-        '''Project-out the values in the dict ast the current time.'''
+        '''Project-out the values in the dict at the current time.'''
         self._now = dict()
         for k in self._dict:
             i = self._updateBefore(k)
@@ -57,7 +57,7 @@ class TimedDictView(Generic[K, V]):
                     # update was a set, include this key in the projection
                     self._now[k] = i
                 else:
-                    # update was a delete
+                    # update was a delete, don't include the key
                     pass
 
     def _updateBefore(self, k: K) -> int:
@@ -150,14 +150,16 @@ class TimedDictView(Generic[K, V]):
         :param k: the key
         :param v: the value'''
         if k in self._now:
-            (ct, _, _) = self._dict[k][self._now[k]]
+            (ct, up, pv) = self._dict[k][self._now[k]]
             if ct == self._time:
                 # update at the current time
                 self._dict[k][self._now[k]] = (self._time, True, v)
             else:
-                # update at a time after the last update, insert a new entry
-                self._dict[k].insert(self._now[k] + 1, (self._time, True, v))
-                self._now[k] += 1
+                # only perform an update if the value differs from the last one
+                if up and (pv != v):
+                    # update at a time after the last update, insert a new entry
+                    self._dict[k].insert(self._now[k] + 1, (self._time, True, v))
+                    self._now[k] += 1
         else:
             # new element (at this time)
             i = self._updateBefore(k)
@@ -166,19 +168,17 @@ class TimedDictView(Generic[K, V]):
                 self._dict[k] = [(self._time, True, v)]
                 self._now[k] = 0
             else:
-                # add an entry for this time
+                # new element after a deletion, add an entry
                 self._dict[k].insert(i + 1, (self._time, True, v))
-                self._now[k] += 1
+                self._now[k] = i + 1
 
     def __delitem__(self, k: K):
         '''Delete the mapping for the given key at the current time. This
         does not affect values at earlier times, or assignments in the future.
+        It is silent if there is no entry for the given key at the given time.
 
         :param k: the key'''
-        if k not in self._now:
-            t = self._time
-            raise KeyError(f'No key {k} at time {t}')
-        else:
+        if k in self._now:
             i = self._updateBefore(k)
             self._dict[k].insert(i + 1, (self._time, False, None))
             del self._now[k]

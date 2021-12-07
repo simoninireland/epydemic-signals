@@ -78,27 +78,24 @@ class TimedDictTests(unittest.TestCase):
         self.assertCountEqual(d.keys(), ['a'])
 
     def testDeleteNever(self):
-        '''Test we can't delete an element that's never been added.'''
+        '''Test we can silently delete an element that's never been added.'''
         d0 = self._dict[0]
         d0['a'] = 10
-        with self.assertRaises(Exception):
-            del d0['c']
+        del d0['c']
 
         d1 = self._dict[1]
         d1['b'] = 20
-        with self.assertRaises(Exception):
-            del d1['c']
+        del d1['c']
 
     def deleteNoLonger(self):
-        '''Test we can't delete an element we already deleted.'''
+        '''Test we can re-delete an element we already deleted.'''
         d0 = self._dict[0]
         d0['a'] = 10
         d0['b'] = 20
 
         d1 = self._dict[1]
         del d1['b']
-        with self.assertRaises(Exception):
-            del d1['b']
+        del d1['b']
 
         d = self._dict[0]
         self.assertCountEqual(d.keys(), ['a', 'b'])
@@ -153,6 +150,66 @@ class TimedDictTests(unittest.TestCase):
         self.assertCountEqual(d.keys(), ['a'])
         self.assertEqual(d['a'], 30)
 
+    def testDeletionDeletes(self):
+        '''Test we can't retrieve a value we've deleted.'''
+        d0 = self._dict[0]
+        d0['a'] = 10
+
+        d1 = self._dict[1]
+        del d1['a']
+        with self.assertRaises(Exception):
+            d1['a']
+
+        d2 = self._dict[2]
+        with self.assertRaises(Exception):
+            d2['a']
+
+    def testGetGlobal(self):
+        '''Test we cam't get a value that's never been added.'''
+        d0 = self._dict[0]
+        d0['a'] = 10
+        with self.assertRaises(Exception):
+            d0['b']
+
+        d1 = self._dict[1]
+        with self.assertRaises(Exception):
+            d1['b']
+
+    def testUpdateSame(self):
+        '''Test that new updates to the same value don't add a transition.'''
+        d0 = self._dict[0]
+        d0['a'] = 10
+
+        d1 = self._dict[1]
+        self.assertEqual(d1['a'], 10)
+        d1['a'] = 10
+        self.assertEqual(d1['a'], 10)
+        self.assertCountEqual(self._dict.updates(), [0])
+
+        d1['a'] = 20
+        self.assertEqual(d1['a'], 20)
+        self.assertCountEqual(self._dict.updates(), [0, 1])
+
+    def testNewValueAfterDelete(self):
+        '''Test updating back to a value after an intermediate deletion.'''
+        d0 = self._dict[0]
+        d0['a'] = 10
+        self.assertCountEqual(self._dict.updates(), [0])
+
+        d1 = self._dict[1]
+        del d1['a']
+        self.assertCountEqual(self._dict.updates(), [0, 1])
+
+        # should add an update, since we're after a delete
+        d2 = self._dict[2]
+        d2['a'] = 10
+        self.assertCountEqual(self._dict.updates(), [0, 1, 2])
+
+        # shouldn't add an update
+        d3 = self._dict[3]
+        d3['a'] = 10
+        self.assertCountEqual(self._dict.updates(), [0, 1, 2])
+
     def testSnapshot(self):
         '''Test we can snap the timed dict.'''
         d0 = self._dict[0]
@@ -201,7 +258,7 @@ class TimedDictTests(unittest.TestCase):
         d['a'] = 0
         d = self._dict[1]
         d['b'] = 20
-        d['b'] = 30
+        d['b'] = 30      # this overwrites the previous value at this time
         del d['a']
         d = self._dict[2]
         del d['b']
