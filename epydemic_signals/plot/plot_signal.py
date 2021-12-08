@@ -69,7 +69,9 @@ def plot_signal(s: Signal, t: float,
         cmap = get_cmap(cmap)
     if norm is None:
         # normalise the colourmap of the signal to be centred on 0
-        (vmin, vmax) = s.getBounds()
+        vs = list(s.values())
+        vs.sort()
+        (vmin, vmax) = (vs[1], vs[-2])  # avoid endpoints in case of infinities
         norm = TwoSlopeNorm(0, vmin, vmax)
     if title is None:
         title = f'Signal ($t = {t:.2f}$)'
