@@ -44,17 +44,20 @@ def plot_signal(s: Signal, t: float,
     :param t: the simulation time
     :param ax: (optional) axes to draw into
     :param cmap: (optional) mapping from signal values to colours
-    :parram norm: (optional) normaliser to normalise signal values
+    :param norm: (optional) normaliser of signal values
     :param pos: (optional) a mapping of nodes to positions
     :param title: (optional) title for plot
     :param fontsize: (optional) size of label font
-    :paaram tickfontsize: (optional) size of tick font
+    :param tickfontsize: (optional) size of tick font
     :param marker: (optional) marker style for nodes
     :param markersize: (optional) marker size
     '''
     g = s.network()
     s_t = s[t]
     colours = [s_t[n] for n in g.nodes()]
+    vs = list(s.values())
+    vs.sort()
+    (vmin, vmax) = (vs[1], vs[-2])  # avoid endpoints in case of infinities
 
     # fil in defaults
     if ax is None:
@@ -69,9 +72,6 @@ def plot_signal(s: Signal, t: float,
         cmap = get_cmap(cmap)
     if norm is None:
         # normalise the colourmap of the signal to be centred on 0
-        vs = list(s.values())
-        vs.sort()
-        (vmin, vmax) = (vs[1], vs[-2])  # avoid endpoints in case of infinities
         norm = TwoSlopeNorm(0, vmin, vmax)
     if title is None:
         title = f'Signal ($t = {t:.2f}$)'
