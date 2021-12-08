@@ -31,7 +31,7 @@ class CompartmentSignalGenerator(SignalGenerator):
     :param s: the signal
     '''
 
-    def __init__(self, p: Process, s: Signal):
+    def __init__(self, p: Process, s: Signal = None):
         super().__init__(p, s)
 
     def captureCompartments(self, t: float):
@@ -62,5 +62,4 @@ class CompartmentSignalGenerator(SignalGenerator):
         :param t: the simulation time
         :param etype: the event type (not used)
         :parram e: the element (not used)'''
-        print(t, etype, e)
         self.captureCompartments(t)

@@ -30,10 +30,11 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
     incident on that node, and so is 0 by definition on any other
     than S or I edges.
 
+    :param p: the process
     :param s: the signal
     '''
 
-    def __init__(self, p: Process, s: Signal):
+    def __init__(self, p: Process, s: Signal = None):
         super().__init__(p, s)
 
         # register the event handlers
