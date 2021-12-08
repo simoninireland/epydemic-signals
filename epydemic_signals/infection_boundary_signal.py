@@ -33,25 +33,27 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
     :param s: the signal
     '''
 
-    def __init__(self, s: Signal):
-        super().__init__(s)
+    def __init__(self, p: Process, s: Signal):
+        super().__init__(p, s)
 
         # register the event handlers
         self.addEventTypeHandler(SIR.INFECTED, self.infect)
         self.addEventTypeHandler(SIR.REMOVED, self.remove)
 
-    def setUp(self):
+    def setUp(self, g: Graph):
         '''Capture the initial signal.'''
-        s = self.signal()
-        g = s.network()
-        p = s.process()
+        super().setUp(g)
+
+        signal = self.signal()
+        g = self.network()
+        p = self.process()
         cm = cast(CompartmentedModel, p)
 
         # initialise signal t 0 everywhere, to make sure
         # we have an entry for all nodes
-        signal = s[0.0]
+        s = signal[0.0]
         for n in g.nodes():
-            signal[n] = 0
+            s[n] = 0
 
         # traverse all the infected nodes, counting incident edges
         for n in g.nodes():
@@ -61,11 +63,11 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
                 for (_, m) in g.edges(n):
                     if cm.getCompartment(m) == SIR.SUSCEPTIBLE:
                         si += 1
-                        if m in signal:
-                            signal[m] += 1
+                        if m in s:
+                            s[m] += 1
                         else:
-                            signal[m] = 1
-                signal[n] = si
+                            s[m] = 1
+                s[n] = si
 
     def infect(self, t: float, e: Edge):
         '''Change the signal on infection. This involves removing any
@@ -74,11 +76,10 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
 
         :param t: the simulation time
         :param e: the SI edge'''
-        s = self.signal()
-        signal = s[t]
+        signal = self.signal()
+        s = signal[t]
         g = self.network()
-        p = s.process()
-        cm = cast(CompartmentedModel, p)
+        cm = cast(CompartmentedModel, self.process())
         (n, _) = e
 
         # traverse all neighbours and count SI edges
@@ -88,11 +89,11 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
             if c == SIR.SUSCEPTIBLE:
                 # new SI edge, incrment both us and the neighbour
                 si += 1
-                signal[m] += 1
+                s[m] += 1
             elif c == SIR.INFECTED:
                 # former SI edge, decrement the other end
-                signal[m] -= 1
-        signal[n] = si
+                s[m] -= 1
+        s[n] = si
 
     def remove(self, t: float, n: Node):
         '''Update signal on removal. This decrements any susceptibble
@@ -101,15 +102,14 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
 
         :param t: the simulation time
         :param e: the SI edge'''
-        s = self.signal()
-        signal = s[t]
+        signal = self.signal()
+        s = signal[t]
         g = self.network()
-        p = s.process()
-        cm = cast(CompartmentedModel, p)
+        cm = cast(CompartmentedModel, self.process())
 
         for m in g.neighbors(n):
             c = cm.getCompartment(m)
             if c == SIR.SUSCEPTIBLE:
                 # former SI edge, decrement the neighbour
-                signal[m] -= 1
-        signal[n] = 0
+                s[m] -= 1
+        s[n] = 0

@@ -39,16 +39,16 @@ class BoundarySignalTests(unittest.TestCase):
 
         self._p = SIR()
         self._e = StochasticDynamics(self._p, FixedNetwork(self._g))
-        self._e.setNetwork((self._g))
+        self._e.setNetwork(self._g)
         self._params = dict({SIR.P_INFECTED: 0.0,
                              SIR.P_INFECT: 0.0,
                              SIR.P_REMOVE: 0.0})
-        self._signal = Signal(self._p)
-        self._generator = InfectionBoundarySignalGenerator(self._signal)
+        self._signal = Signal()
+        self._generator = InfectionBoundarySignalGenerator(self._p, self._signal)
         self._p.build(self._params)
         self._p.setUp(self._params)
         self._p.changeCompartment(1, SIR.INFECTED)
-        self._generator.setUp()
+        self._generator.setUp(self._g)
 
     def _playEventsTo(self, ft):
         '''Play all events up to and including time ft, against both the

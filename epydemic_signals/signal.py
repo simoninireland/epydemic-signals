@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 from networkx import Graph
 from epydemic import Node, Process
 from epydemic_signals import TimedDict
@@ -27,28 +27,26 @@ class Signal:
     '''Encode a signal on a network.
 
     A signal -- or strictly speaking a node signal -- associates a mapping
-    from nodes to values for every point in time.
+    from nodes to values for every point in time.'''
 
-    :param g: the network'''
-
-    def __init__(self, p: Process):
-        self._process = p
-        self._dict = TimedDict()
+    def __init__(self):
+        self._network: Graph = None          # the domain of the signal
+        self._dict: TimedDict = TimedDict()  # the signal data structure
 
 
     # ---------- Accessing the signal ----------
+
+    def setNetwork(self, g: Graph):
+        '''Set the network over which this signal is defined.
+
+        :param g: the network'''
+        self._network = g
 
     def network(self) -> Graph:
         '''Return the network over which this signal is defined.
 
         :returns: the network'''
-        return self.process().network()
-
-    def process(self) -> Process:
-        '''Return the process this siignal is being generated from..
-
-        :returns: the process'''
-        return self._process
+        return self._network
 
     def transitions(self) -> List[float]:
         '''Return a list of times at which the signal changes, in
@@ -57,7 +55,10 @@ class Signal:
         :returns: a list of times'''
         return self._dict.updates()
 
-    def getBounds(self) -> List[float]:
+    def getBounds(self) -> Tuple[float, float]:
+        '''Return the maximum and minimum values of the signal at any time.
+
+        :returns: a pair of (min, max) values'''
         vs = list(self._dict.valuesAtSomeTime())
         if len(vs) > 2:
             vs.sort()
@@ -71,11 +72,11 @@ class Signal:
         '''Extract the mapping of the signal at the given time.
 
         :param t: the time
-        :returns: a dict from nodes to values'''
+        :returns: a dict from nodes to value at the given times'''
         return self._dict[t]
 
     def __len__(self) -> int:
-        '''Return the number of transitions points in the signal, the
+        '''Return the number of transition points in the signal, the
         times when it changed.
 
         :returns: the number of transitions'''

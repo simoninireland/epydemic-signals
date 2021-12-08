@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2021 Simon Dobson
 #
-# This file is part of epydemic-signals, an experiment in epidemics processes.
+# This file is part of epydemic-signals, an experiment in epidemic processes.
 #
 # epydemic-signals is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,8 +32,7 @@ class ProgressSignalTests(unittest.TestCase):
         self._g.add_nodes_from([1, 2, 3, 4, 5, 6])
         self._g.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
 
-        self._evs = [(0.0, SIR.INFECTED, (1, 0)),
-                     (1.0, SIR.INFECTED, (3, 1)),
+        self._evs = [(1.0, SIR.INFECTED, (3, 1)),
                      (2.0, SIR.REMOVED, 1),
                      (3.0, SIR.INFECTED, (4, 3)),
                      (4.0, SIR.REMOVED, 3)]
@@ -44,11 +43,12 @@ class ProgressSignalTests(unittest.TestCase):
         self._params = dict({SIR.P_INFECTED: 0.0,
                              SIR.P_INFECT: 0.0,
                              SIR.P_REMOVE: 0.0})
-        self._signal = Signal(self._p)
-        self._generator = SIRProgressSignalGenerator(self._signal)
+        self._signal = Signal()
+        self._generator = SIRProgressSignalGenerator(self._p, self._signal)
         self._p.build(self._params)
         self._p.setUp(self._params)
-        self._generator.setUp()
+        self._p.changeCompartment(1, SIR.INFECTED)
+        self._generator.setUp(self._g)
         for (t, etype, e) in self._evs:
             self._generator.event(t, etype, e)
 
@@ -168,9 +168,9 @@ class ProgressSignalTests(unittest.TestCase):
         self._p.build(self._params)
         self._p.setUp(self._params)
         self._p.setCompartment(1, SIR.INFECTED)
-        signal = Signal(self._p)
-        gen = SIRProgressSignalGenerator(signal)
-        gen.setUp()
+        signal = Signal()
+        gen = SIRProgressSignalGenerator(self._p, signal)
+        gen.setUp(self._g)
         s = signal[0.0]
         self.assertEqual(s[1], 0)
         self.assertEqual(s[2], 1)
@@ -187,59 +187,68 @@ class ProgressSignalTests(unittest.TestCase):
         g = Graph()
         g.add_nodes_from([1, 2, 3, 4, 5, 6])
         g.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
-        evs = [(0.0, SIR.INFECTED, (1, None)),
-               (1.0, SIR.INFECTED, (3, None)),
-               (2.0, SIR.INFECTED, (5, None)),
-               (3.0, SIR.INFECTED, (4, None)),
-               (4.0, SIR.INFECTED, (2, None)),
-               (5.0, SIR.INFECTED, (6, None))]
-        self.checkInvariants(g, evs)
+        evs = [(1.0, SIR.INFECTED, (3, 1)),
+               (2.0, SIR.INFECTED, (4, 3)),
+               (3.0, SIR.INFECTED, (5, 4)),
+               (4.0, SIR.INFECTED, (2, 1)),
+               (5.0, SIR.INFECTED, (6, 4))]
+        self.checkInvariants(g, [1], evs)
 
     def testInvariantsRemove(self):
         '''Test invariants when adding and then removing infected nodes.'''
         g = Graph()
         g.add_nodes_from([1, 2, 3, 4, 5, 6])
         g.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
-        evs = [(0.0, SIR.INFECTED, (1, None)),
-               (1.0, SIR.INFECTED, (3, None)),
-               (2.0, SIR.INFECTED, (5, None)),
-               (3.0, SIR.INFECTED, (4, None)),
-               (4.0, SIR.INFECTED, (2, None)),
-               (5.0, SIR.INFECTED, (6, None)),
-               (6.0, SIR.REMOVED, 4),
+        evs = [(6.0, SIR.REMOVED, 4),
                (7.0, SIR.REMOVED, 5),
                (8.0, SIR.REMOVED, 1),
                (9.0, SIR.REMOVED, 3),
                (10.0, SIR.REMOVED, 2),
                (11.0, SIR.REMOVED, 6)]
-        self.checkInvariants(g, evs)
+        self.checkInvariants(g, [1, 2, 3, 4, 5, 6], evs)
 
     def testInvariantsLatticeManual(self):
         '''Test invariants on a larger network.'''
         g = convert_node_labels_to_integers(grid_graph(dim=(6, 6)), first_label=1)
-        evs = [(0.0, SIR.INFECTED, (21, None)),
-               (1.0, SIR.INFECTED, (22, 21))]
-        self.checkInvariants(g, evs)
+        evs = [(1.0, SIR.INFECTED, (22, 21))]
+        self.checkInvariants(g, [21], evs)
 
-    def checkInvariants(self, g, evs, endState=False):
+    def checkInvariants(self, g, initialInfecteds, evs, endState=False):
         p = SIR()
         x = StochasticDynamics(p, FixedNetwork(g))
-        x.setNetwork((g))
+        x.setNetwork(g)
         params = dict({SIR.P_INFECTED: 0.0,
                        SIR.P_INFECT: 0.0,
                        SIR.P_REMOVE: 0.0})
-        p.build(self._params)
-        p.setUp(self._params)
-        signal = Signal(p)
-        generator = SIRProgressSignalGenerator(signal)
-        generator.setUp()
+        signal = Signal()
+        generator = SIRProgressSignalGenerator(p, signal)
+        p.build(params)
+        p.setUp(params)
+        for i in initialInfecteds:
+            p.changeCompartment(i, SIR.INFECTED)
+        generator.setUp(g)
 
         ns = list(g.nodes())
-        susceptibles = set(ns.copy())
+        susceptibles = set()
         infecteds = set()
         removeds = set()
+        for n in ns:
+            c = p.getCompartment(n)
+            if c == SIR.SUSCEPTIBLE:
+                susceptibles.add(n)
+            elif c == SIR.INFECTED:
+                infecteds.add(n)
+            elif c == SIR.REMOVED:
+                removeds.add(n)
+            else:
+                self.assertTrue(False, 'Invalid compartment {c}')
+
         for (t, etype, e) in evs:
-            #print(t, etype, e)
+            print(t, etype, e)
+            if etype == SIR.INFECTED:
+                p.infect(t, e)
+            elif etype == SIR.REMOVED:
+                p.remove(t, e)
             generator.event(t, etype, e)
             sig = signal[t]
 
@@ -271,7 +280,6 @@ class ProgressSignalTests(unittest.TestCase):
             #  check the end state
             self.assertEqual(len(susceptibles), 0)
             self.assertEqual(len(susceptibles) + len(removeds), g.order())
-
 
     def checkSusceptibles(self, g, sig, susceptibles, infecteds, removeds):
         ss = susceptibles.copy()

@@ -18,6 +18,7 @@
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
 from typing import cast
+from networkx import Graph
 from epydemic import Node, Edge, Element, Process, CompartmentedModel
 from epydemic_signals import Signal, SignalGenerator
 
@@ -26,11 +27,12 @@ class CompartmentSignalGenerator(SignalGenerator):
     '''Create a signal from the way compartments change. Works for any
     compartmented model.
 
+    :param p: the process
     :param s: the signal
     '''
 
-    def __init__(self, s: Signal):
-        super().__init__(s)
+    def __init__(self, p: Process, s: Signal):
+        super().__init__(p, s)
 
     def captureCompartments(self, t: float):
         '''Capture the state of the network in terms of compartments. The
@@ -38,22 +40,27 @@ class CompartmentSignalGenerator(SignalGenerator):
 
         :param t: the simulation time'''
         g = self.network()
-        sig = self.signal()[t]
-        cm = cast(CompartmentedModel, p)
-        for n in g.nodes():
-            sig[n] = cm.getCompartment(n)
+        signal = self.signal()
+        s = signal[t]
+        cm = cast(CompartmentedModel, self.process())
 
-    def setUp(self):
+        # This could (and should) be optimised to look only at the
+        # neighbourhood of the updated node.
+        for n in g.nodes():
+            s[n] = cm.getCompartment(n)
+
+    def setUp(self, g: Graph):
         '''Capture the initial state of the network.
 
-        :param g: the network
-        :param p: the process'''
+        :param g: the network'''
+        super().setUp(g)
         self.captureCompartments(0.0)
 
     def event(self, t: float, etype: str, e: Element):
-        '''Respond to events by snapshotting the state of the compartments.
+        '''Respond to all events by snapshotting the state of the compartments.
 
         :param t: the simulation time
         :param etype: the event type (not used)
         :parram e: the element (not used)'''
+        print(t, etype, e)
         self.captureCompartments(t)
