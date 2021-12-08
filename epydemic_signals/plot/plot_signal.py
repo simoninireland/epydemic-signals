@@ -90,6 +90,6 @@ def plot_signal(s: Signal, t: float,
     cax = divider.append_axes('right', size='2%', pad=0.05)
     m = ScalarMappable(norm=norm, cmap=cmap)
     m.set_array(colours)
-    cbar = plt.colorbar(m, cax=cax)
-    cbar.set_ticks([vmin, 0, vmax])
+    cbar = plt.colorbar(m, cax=cax, ticks=[vmin, 0, vmax], format='%.0f')
+    #cbar.set_ticks()
     cax.tick_params(labelsize=tickfontsize, width=0.5, length=3, pad=0.3)
