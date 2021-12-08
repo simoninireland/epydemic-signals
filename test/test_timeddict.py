@@ -175,6 +175,11 @@ class TimedDictTests(unittest.TestCase):
         with self.assertRaises(Exception):
             d1['b']
 
+    def testGetDefault(self):
+        '''Test getting default values.'''
+        d = self._dict[0]
+        self.assertEqual(d.get('a', 10), 10)
+
     def testUpdateSame(self):
         '''Test that new updates to the same value don't add a transition.'''
         d0 = self._dict[0]

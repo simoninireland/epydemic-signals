@@ -37,6 +37,9 @@ class TimedDictView(Generic[K, V]):
     :param d: the timed dict's diff structure
     :param t: the time'''
 
+    # TODO: This needs to be optimised to only look for the "now" state of nodes
+    # that are actually accessed.
+
     def __init__(self, d: Dict[K, List[Tuple[float, bool, V]]], t : float):
         self._dict = d                     # dict from key to diff list
         self._time = t                     # projection time
@@ -97,6 +100,14 @@ class TimedDictView(Generic[K, V]):
             # if we get here, there's a problem with the data structures
             raise Exception(f'Corrupted diff list for {k}')
 
+    def _hasValueNow(self, k):
+        '''Test whether a key currently has a valeu, meaning that it has
+        been assigned to at some point and not deleted.
+
+        :param k: the key
+        :returns: True if the key has a value'''
+        return k in self._now
+
 
     # ---------- dict interface ----------
 
@@ -132,16 +143,11 @@ class TimedDictView(Generic[K, V]):
     def __getitem__(self, k: K) -> V:
         '''Retrieve the value associated with the given key at the current time.
         Raises a KeyError if the key is not defined (even if it has been, or will be,
-        at other times).
+        at other times). This is the dict form of :meth:`get`.
 
         :param k: the key
         :returns: the value'''
-        if k in self._now:
-            (_, _, v) = self._dict[k][self._now[k]]
-            return v
-        else:
-            t = self._time
-            raise KeyError(f'No key {k} at time {t}')
+        return self.get(k)
 
     def __setitem__(self, k: K, v: V):
         '''Set the value associated with the given key at the current time,
@@ -149,15 +155,18 @@ class TimedDictView(Generic[K, V]):
 
         :param k: the key
         :param v: the value'''
-        if k in self._now:
+        #t = self._time
+        if self._hasValueNow(k):
             (ct, up, pv) = self._dict[k][self._now[k]]
             if ct == self._time:
                 # update at the current time
+                #print(f'overwritten {k}={v} at time {ct}')
                 self._dict[k][self._now[k]] = (self._time, True, v)
             else:
                 # only perform an update if the value differs from the last one
                 if up and (pv != v):
                     # update at a time after the last update, insert a new entry
+                    #print(f'changed {k}={v} at time {t}')
                     self._dict[k].insert(self._now[k] + 1, (self._time, True, v))
                     self._now[k] += 1
         else:
@@ -165,10 +174,12 @@ class TimedDictView(Generic[K, V]):
             i = self._updateBefore(k)
             if i < 0:
                 # globally new entry, add to the main dict
+                #print(f'initial {k}={v} at time {t}')
                 self._dict[k] = [(self._time, True, v)]
                 self._now[k] = 0
             else:
                 # new element after a deletion, add an entry
+                #print(f'new {k}={v} at time {t}')
                 self._dict[k].insert(i + 1, (self._time, True, v))
                 self._now[k] = i + 1
 
@@ -178,10 +189,30 @@ class TimedDictView(Generic[K, V]):
         It is silent if there is no entry for the given key at the given time.
 
         :param k: the key'''
-        if k in self._now:
+        if self._hasValueNow(k):
             i = self._updateBefore(k)
             self._dict[k].insert(i + 1, (self._time, False, None))
             del self._now[k]
+
+    def get(self, k: K, default: V = None) -> V:
+        '''Get the value of the given key, returning the default value if
+        the key doesn't have a value. Raise a KeyError if no default value
+        is given and the key is missing.
+
+        :param k: the key
+        :param default: (optional) default value
+        :returns: the key value of the default'''
+        if self._hasValueNow(k):
+            # key has a value, return it
+            (_, _, v) = self._dict[k][self._now[k]]
+            return v
+        elif default is not None:
+            # no value, return the default
+            return default
+        else:
+            # no value and no default, raise an exception
+            t = self._time
+            raise KeyError(f'No key {k} at time {t}')
 
 
     # ---------- conversion ----------
