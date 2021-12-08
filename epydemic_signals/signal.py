@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Iterable
 from networkx import Graph
 from epydemic import Node, Process
 from epydemic_signals import TimedDict
@@ -55,20 +55,13 @@ class Signal:
         :returns: a list of times'''
         return self._dict.updates()
 
-    def getBounds(self) -> Tuple[float, float]:
-        '''Return the maximum and minimum values of the signal at any time.
+    def values(self) -> Iterable[Any]:
+        '''Return all the values the signal takes, at any point and time.
 
-        :returns: a pair of (min, max) values'''
-        vs = list(self._dict.valuesAtSomeTime())
-        if len(vs) > 2:
-            vs.sort()
-            return (vs[0], vs[-1])
-        elif len(vs) == 1:
-            return (vs[0], vs[0])
-        else:
-            raise ValueError('Empty signal')
+        :returrns: the values'''
+        return self._dict.valuesAtSomeTime()
 
-    def __getitem__(self, t: float) -> Dict[Node, float]:
+    def __getitem__(self, t: float) -> Dict[Node, Any]:
         '''Extract the mapping of the signal at the given time.
 
         :param t: the time
