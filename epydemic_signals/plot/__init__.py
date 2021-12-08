@@ -17,5 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+'''Plotting routines for `epydemic-signals`. These provide some
+standard plots of various signals in variious ways, to speed-up
+analysis and presentation. All the routines are heavily
+customisable.
+
+'''
+
 from .plot_compartments import plot_compartments
 from .plot_signal import plot_signal
