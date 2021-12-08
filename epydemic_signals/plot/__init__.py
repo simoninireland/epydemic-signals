@@ -1,4 +1,4 @@
-# Initialisation forr epydemic-signals plottiing functions
+# Initialisation for epydemic-signals plotiing functions
 #
 # Copyright (C) 2021 Simon Dobson
 #
