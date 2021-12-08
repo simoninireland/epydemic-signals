@@ -32,10 +32,15 @@ class SignalGenerator:
     attached to a signal dynamics to repond to the events generated
     by a simulation, generating the corresponding signal.
 
-    :param p: the process generating the signal
-    :param s: the signal being generated'''
+    By default a basic instance of :class:`Signal` is used for the signal.
+    Specific instances and/or sub-classes can be provided if needed.
 
-    def __init__(self, p: Process, s: Signal):
+    :param p: the process generating the signal
+    :param s: (optional) the signal being generated (creates one if missing)'''
+
+    def __init__(self, p: Process, s: Signal = None):
+        if s is None:
+            s = Signal()
         self._process = p
         self._signal = s
         self._typeHandler: Dict[str, EventHandler] = dict()
