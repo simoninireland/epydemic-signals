@@ -17,21 +17,25 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-from typing import Dict, Any, List, Tuple, Iterable
+from typing import Dict, TypeVar, Generic, List, Iterable
 from networkx import Graph
 from epydemic import Node, Process
 from epydemic_signals import TimedDict
 
 
-class Signal:
+# Type variable for signal values
+V = TypeVar('V')
+
+
+class Signal(Generic[V]):
     '''Encode a signal on a network.
 
     A signal -- or strictly speaking a node signal -- associates a mapping
     from nodes to values for every point in time.'''
 
     def __init__(self):
-        self._network: Graph = None          # the domain of the signal
-        self._dict: TimedDict = TimedDict()  # the signal data structure
+        self._network: Graph = None                    # the domain of the signal
+        self._dict: TimedDict[float, V] = TimedDict()  # the signal data structure
 
 
     # ---------- Accessing the signal ----------
@@ -55,13 +59,13 @@ class Signal:
         :returns: a list of times'''
         return self._dict.updates()
 
-    def values(self) -> Iterable[Any]:
+    def values(self) -> Iterable[V]:
         '''Return all the values the signal takes, at any point and time.
 
         :returrns: the values'''
         return self._dict.valuesAtSomeTime()
 
-    def __getitem__(self, t: float) -> Dict[Node, Any]:
+    def __getitem__(self, t: float) -> Dict[Node, V]:
         '''Extract the mapping of the signal at the given time.
 
         :param t: the time

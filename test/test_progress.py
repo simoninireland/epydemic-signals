@@ -49,14 +49,28 @@ class ProgressSignalTests(unittest.TestCase):
         self._p.setUp(self._params)
         self._p.changeCompartment(1, SIR.INFECTED)
         self._generator.setUp(self._g)
+
+    def _playEventsTo(self, ft):
+        '''Play all events up to and including time ft, against both the
+        process and the signal generator.
+
+        :param ft: the final event time
+        :returns: the signal at time ft'''
         for (t, etype, e) in self._evs:
-            self._generator.event(t, etype, e)
+            if t <= ft:
+                if etype == SIR.INFECTED:
+                    self._p.infect(t, e)
+                elif etype == SIR.REMOVED:
+                    self._p.remove(t, e)
+                self._generator.event(t, etype, e)
+        return self._signal[ft]
 
 
     # ----------  Small tests ----------
 
     def testBase(self):
         '''Test the base signal is correct.'''
+        self._playEventsTo(0.0)
         s = self._signal[0.0]
         self.assertEqual(s[1], 0)
         self.assertEqual(s[2], 1)
@@ -67,6 +81,7 @@ class ProgressSignalTests(unittest.TestCase):
 
     def testSlightlyBeyondBase(self):
         '''Test that times before the first transition stay like base.'''
+        self._playEventsTo(0.0)
         s = self._signal[0.2]
         self.assertEqual(s[1], 0)
         self.assertEqual(s[2], 1)
@@ -77,6 +92,7 @@ class ProgressSignalTests(unittest.TestCase):
 
     def testTransitionAt1(self):
         '''Test t=1.0.'''
+        self._playEventsTo(1.0)
         s = self._signal[1.0]
         self.assertEqual(s[1], 0)
         self.assertEqual(s[2], 1)
@@ -87,6 +103,7 @@ class ProgressSignalTests(unittest.TestCase):
 
     def testTransitionAt2(self):
         '''Test t=2.0.'''
+        self._playEventsTo(2.0)
         s = self._signal[2.0]
         self.assertEqual(s[1], -1)
         self.assertEqual(s[2], 1)
@@ -97,6 +114,7 @@ class ProgressSignalTests(unittest.TestCase):
 
     def testTransitionAt3(self):
         '''Test t=3.0.'''
+        self._playEventsTo(3.0)
         s = self._signal[3.0]
         self.assertEqual(s[1], -1)
         self.assertEqual(s[2], 1)
@@ -107,6 +125,7 @@ class ProgressSignalTests(unittest.TestCase):
 
     def testTransitionAt4(self):
         '''Test t=4.'''
+        self._playEventsTo(4.0)
         s = self._signal[4.0]
         self.assertEqual(s[1], -2)
         self.assertEqual(s[2], 1)
@@ -117,6 +136,7 @@ class ProgressSignalTests(unittest.TestCase):
 
     def testLate(self):
         '''Test the signal doesn't change after the last transition.'''
+        self._playEventsTo(6.0)
         s = self._signal[6.0]
         self.assertEqual(s[1], -2)
         self.assertEqual(s[2], 1)
@@ -127,6 +147,7 @@ class ProgressSignalTests(unittest.TestCase):
 
     def testBackAndForward(self):
         '''Test that the signal backs-up correctly.'''
+        self._playEventsTo(4.0)
         s = self._signal[2.0]
         s = self._signal[1.0]
         self.assertEqual(s[1], 0)
@@ -138,6 +159,7 @@ class ProgressSignalTests(unittest.TestCase):
 
     def testBackToZero(self):
         '''Test we can return to zero.'''
+        self._playEventsTo(4.0)
         s = self._signal[2.0]
         self.assertEqual(s[1], -1)
         self.assertEqual(s[2], 1)
@@ -178,6 +200,8 @@ class ProgressSignalTests(unittest.TestCase):
         self.assertEqual(s[4], 2)
         self.assertEqual(s[5], 3)
         self.assertEqual(s[6], 3)
+
+    # TODO Test that disconnnected sub-graphs generate +/- infinity
 
 
     # ---------- Soak tests ----------

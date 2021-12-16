@@ -35,8 +35,7 @@ class SignalTests(unittest.TestCase):
         '''Test the properties of an empty signal.'''
         self.assertCountEqual(self._signal.transitions(), [])
         self.assertCountEqual(self._signal[0].keys(), [])
-        with self.assertRaises(ValueError):
-            self._signal.getBounds()
+        self.assertEqual(len(self._signal.values()), 0)
 
     def testOnePointSignal(self):
         '''Test the behaviour of a signal with one entry.'''
@@ -45,7 +44,7 @@ class SignalTests(unittest.TestCase):
         s = self._signal[1]
 
         self.assertCountEqual(self._signal.transitions(), [0])
-        self.assertEqual(self._signal.getBounds(), (10, 10))
+        self.assertCountEqual(self._signal.values(), [10])
 
     def testTwoPointSignal(self):
         '''Test the behaviour of a signal with two points.'''
@@ -56,7 +55,7 @@ class SignalTests(unittest.TestCase):
         d['b'] = 20
 
         self.assertCountEqual(self._signal.transitions(), [0, 1])
-        self.assertEqual(self._signal.getBounds(), (10, 30))
+        self.assertCountEqual(self._signal.values(), [10, 20, 30])
 
 
 if __name__ == '__main__':

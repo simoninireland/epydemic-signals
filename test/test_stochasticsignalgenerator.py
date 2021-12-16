@@ -20,7 +20,7 @@
 import unittest
 from heapq import heappush, heappop
 from epydemic_signals import *
-from epydemic import SIR, StochasticDynamics, ProcessSequence, FixedNetwork
+from epydemic import SIR, StochasticDynamics, ProcessSequence, FixedNetwork, ERNetwork
 from epyc import Experiment, Lab
 from networkx import Graph, fast_gnp_random_graph, grid_graph, convert_node_labels_to_integers
 
@@ -47,7 +47,8 @@ class SIRProgressSignalInvariants(SignalGenerator):
 
         # extract the initial states
         for n in g.nodes():
-            self._compartment[p.getCompartment(n)].add(n)
+            c = p.getCompartment(n)
+            self._compartment[c].add(n)
         self.checkInvariants(0.0)
 
     def infect(self, t, e):
@@ -138,10 +139,8 @@ class SIRProgressSignalInvariants(SignalGenerator):
                 raise Exception(f'R coboundary mismatch for removed {n}')
 
     def checkSusceptibles(self, g, sig):
-        ss = self._compartment[SIR.SUSCEPTIBLE].copy()
         onpath = set(self._compartment[SIR.SUSCEPTIBLE]).copy()
-        while len(ss) > 0:
-            n = ss.pop()
+        for n in self._compartment[SIR.SUSCEPTIBLE]:
             #print(f'sus check {n}')
             d = sig[n]
 
@@ -156,26 +155,21 @@ class SIRProgressSignalInvariants(SignalGenerator):
                 if m in self._compartment[SIR.SUSCEPTIBLE]:
                     #print(n, m, d, sig[m])
                     if not (abs(sig[m] - d) <= 1):
-                        raise Exception('Susceptible neighbour signal diff too large', sig[m], d)
+                        raise Exception(f'Susceptible {n} neighbour {m} signal diff too large', d, sig[m])
                 elif m in self._compartment[SIR.INFECTED]:
                     if d != 1:
-                        raise Exception(f'Susceptible signal next to infected should be 1 but is {d}')
+                        raise Exception(f'Susceptible {m} signal next to infected should be 1 but is {d}')
 
             # check our distance to the infected boundary is correct
             dprime = self.shortestPath(g, n, self._compartment[SIR.INFECTED], onpath)
-            if dprime is None:
-                # if we can't find a shortest path then there should be no infecteds left
-                if len(self._compartment[SIR.INFECTED]) != 0:
-                    raise Exception('No shortest path but still have infecteds')
-            elif d != dprime:
-                raise Exception(f'Susceptible path should be {dprime} but is {d}')
+            if dprime is not None:
+                if d != dprime:
+                    raise Exception(f'Susceptible {m} path should be {dprime} but is {d}')
 
     def checkRemoveds(self, g, sig):
-        rr = self._compartment[SIR.REMOVED].copy()
         onpath = set(self._compartment[SIR.SUSCEPTIBLE]).copy().union(set(self._compartment[SIR.REMOVED]))
-        while len(rr) > 0:
-            n = rr.pop()
-            #print(f'sus check {n}')
+        for n in self._compartment[SIR.REMOVED]:
+            #print(f'rem check {n}')
             d = sig[n]
 
             # removed signals should be < 0
@@ -190,39 +184,35 @@ class SIRProgressSignalInvariants(SignalGenerator):
                 if m in self._compartment[SIR.REMOVED]:
                     #print(n, m, d, sig[m])
                     if not (abs(sig[m] - d) <= 1):
-                        raise Exception('Neighbouring removed signal diff too large', sig[m], d)
+                        raise Exception(f'Removed {n} neighbour {m} signal diff too large', d, sig[m])
                 elif m in self._compartment[SIR.INFECTED]:
                     if d != -1:
-                        raise Exception(f'Removed signal should be -1 but is {d}')
+                        raise Exception(f'Removed {n} signal should be -1 but is {d}')
 
             # check our distance to the infected boundary is correct
             dprime = self.shortestPath(g, n, self._compartment[SIR.INFECTED], onpath)
-            if dprime is None:
-                # if we can't find a shortest path then there should be no infecteds left
-                if len(self._compartment[SIR.INFECTED]) != 0:
-                    raise Exception('No shortest path but still have infecteds')
-            else:
-                # signal is 0 - shortest path
+            if dprime is not None:
                 if d != -dprime:
-                    raise Exception(f'Removed signal should be {dprime} but is {d}')
+                    raise Exception(f'Removed {n} signal should be -{dprime} but is {d}')
 
-    def shortestPath(self, g, n, targets, onpath):
-        distance = [(0, n)]
-        visited = set()
+    def shortestPath(self, g, s, targets, onpath):
+        distance =[]
+        heappush(distance, (0, s))
+        seen = set([s])
         while len(distance) > 0:
             (d, n) = heappop(distance)
-            visited.add(n)
-            dprime = d + 1
-            ms = g.neighbors(n)
-            for m in ms:
-                if m not in visited:
-                    if m in targets:
-                        # found a node in the target set
-                        return dprime
-                    elif m in onpath:
+            if n in targets:
+                # found a node in the target set
+                return d
+
+            # if we're potentially on the path, add all neighbours to be visited
+            if n in onpath:
+                dprime = d + 1
+                ms = g.neighbors(n)
+                for m in ms:
+                    if m not in seen:
+                        seen.add(m)
                         heappush(distance, (dprime, m))
-                    else:
-                        visited.add(m)
         return None
 
 
@@ -286,6 +276,29 @@ class StochasticSignalDynamicsTests(unittest.TestCase):
         self.assertIsNotNone(sig.network())
         self.assertIsNotNone(gen1.network())
         self.assertIsNotNone(gen2.network())
+
+    def testInvariantER(self):
+        '''Test invariants over an ER network, for less structure.'''
+        lab = Lab()
+        lab[ERNetwork.N] = 5000
+        lab[ERNetwork.KMEAN] = 20
+        lab[SIR.P_INFECTED] = 0.001
+        lab[SIR.P_REMOVE] = 0.002
+        lab[SIR.P_INFECT] = 0.00015
+
+        sir = SIR()
+        e = StochasticSignalDynamics(sir, ERNetwork())
+        progress = Signal()
+        gen = SIRProgressSignalGenerator(sir, progress)
+        e.addSignalGenerator(gen)
+        gen2 = SIRProgressSignalInvariants(sir, progress, gen)    # checks the same signal
+        e.addSignalGenerator(gen2)
+
+        lab.runExperiment(e)
+        rc = lab.results()[0]
+        if not rc[Experiment.METADATA][Experiment.STATUS]:
+            print(rc[Experiment.METADATA][Experiment.TRACEBACK])
+            raise Exception('Failed')
 
 
 if __name__ == '__main__':
