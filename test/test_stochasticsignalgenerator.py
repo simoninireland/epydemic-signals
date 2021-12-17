@@ -21,7 +21,7 @@ import unittest
 from heapq import heappush, heappop
 from epydemic_signals import *
 from epydemic import SIR, StochasticDynamics, ProcessSequence, FixedNetwork, ERNetwork
-from epyc import Experiment, Lab
+from epyc import Experiment, Lab, ParallelLab
 from networkx import Graph, fast_gnp_random_graph, grid_graph, convert_node_labels_to_integers
 
 
@@ -242,6 +242,40 @@ class StochasticSignalDynamicsTests(unittest.TestCase):
         lab[SIR.P_INFECT] = pInfect
         lab[SIR.P_REMOVE] = pRemove
         lab.runExperiment(e)
+
+        self.assertTrue(len(sig) > 0)
+        self.assertIsNotNone(sig.network())
+        self.assertIsNotNone(gen1.network())
+        self.assertIsNotNone(gen2.network())
+
+    def testCreatWith(self):
+        '''Test using createWith().'''
+
+        def create(lab):
+            g = convert_node_labels_to_integers(grid_graph(dim=(10, 10)), first_label=1)
+            pInfect = 0.8
+            pRemove = 0.1
+
+            params = dict()
+            params[SIR.P_INFECT] = pInfect
+            params[SIR.P_REMOVE] = pRemove
+
+            sir = OneInfectionSIR()
+            e = StochasticSignalDynamics(sir, FixedNetwork(g))
+
+            global sig, gen1, gen2
+            sig = Signal()
+            gen1 = SIRProgressSignalGenerator(sir, sig)
+            e.addSignalGenerator(gen1)
+            gen2 = SIRProgressSignalInvariants(sir, sig, gen1)    # checks the same signal
+            e.addSignalGenerator(gen2)
+
+            lab[SIR.P_INFECT] = pInfect
+            lab[SIR.P_REMOVE] = pRemove
+            lab.runExperiment(e)
+
+        lab = Lab()
+        lab.createWith('test', create)
 
         self.assertTrue(len(sig) > 0)
         self.assertIsNotNone(sig.network())

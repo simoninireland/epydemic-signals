@@ -57,6 +57,20 @@
 
     Need signal types for:
 
-    - static  signals (map node to value)
+    - static signals (map node to value)
     - time-varying signals (map time to static signal)
     - node and edge signals (of both types)
+
+*** Parallelism
+
+    There's an issue with using ParallelLab, which is that each run
+    happens in its own process, meaning that updates to the signal
+    aren't seen in the caller. This is why we usually force everything
+    through the notebook.
+
+    The best solution is probably to generalise epyc's notebooks to
+    allow storage of other data objects, and to persist the signal
+    there. This is quite a big job.
+
+    The workaround for now is to use Lab, not ParallelLab (or
+    ClusterLab).
