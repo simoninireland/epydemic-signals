@@ -21,7 +21,7 @@ from typing import Generic, TypeVar, Dict, Tuple, List, Iterable
 
 
 # The top-level class for this code is the TimedDict. This is howver a
-# very thin wrapper onto the TimmedDictView, which is the class that
+# very thin wrapper onto the TimedDictView, which is the class that
 # actually implements the sequence of diffs used to represent time-varying
 # mappings.
 
@@ -101,8 +101,8 @@ class TimedDictView(Generic[K, V]):
             raise Exception(f'Corrupted diff list for {k}')
 
     def _hasValueNow(self, k):
-        '''Test whether a key currently has a valeu, meaning that it has
-        been assigned to at some point and not deleted.
+        '''Test whether a key currently has a value, meaning that it has
+        been assigned to at some earrlier time and has not been subsequently deleted.
 
         :param k: the key
         :returns: True if the key has a value'''
@@ -124,7 +124,7 @@ class TimedDictView(Generic[K, V]):
         return k in self.keys()
 
     def values(self) -> Iterable[V]:
-        '''Return a list oif values in the dict at the current time.
+        '''Return a list of values in the dict at the current time.
 
         :returns: a list of values'''
         # sd: should be lazy?
@@ -289,9 +289,9 @@ class TimedDict(Generic[K, V]):
 
            print(td.valuesAtSomeTime())
 
-        will print "1 2 5 4" (iin some udefined order), as "3" could
-        not now be found in the dict at any time (since it was
-        overwritten by 4).
+        will print "1 2 5 4" (in some undefined order), as 2 and 4 could both
+        be retrieved at some time but 3 couldn't be found in the dict at any
+        time (since it was overwritten by 4).
 
         :returns: a set of values
 
@@ -319,8 +319,8 @@ class TimedDict(Generic[K, V]):
 
     def __len__(self):
         '''Return the number of transition points in the dict.
-        This is not the number of keys perr se, since the dict
-        can be queried for *any* time; ratherr it is the length
+        This is not the number of keys per se, since the dict
+        can be queried for *any* time; rather it is the length
         of the set returned by :meth:`updates`.
 
         :returns: the number of update times'''
