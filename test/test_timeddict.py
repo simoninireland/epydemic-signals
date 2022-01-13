@@ -312,36 +312,34 @@ class TimedDictTests(unittest.TestCase):
     def testSetFrom(self):
         '''Test we can set a selection of values in one go.'''
         d = self._dict[0]
-        vals = dict(a=25,
-                    b=35,
-                    c=40)
-        d.setFrom(vals)
-        self.assertCountEqual(d.keys(), vals.keys())
-        self.assertCountEqual(d.values(), vals.values())
-        for k in d.keys():
-            self.assertEqual(d[k], vals[k])
+        keys = ['a', 'b', 'c']
+        vals = [25, 35, 45]
+        d.setFrom(keys, vals)
+        self.assertCountEqual(d.keys(), keys)
+        self.assertCountEqual(d.values(), vals)
+        for i in range(len(keys)):
+            self.assertEqual(d[keys[i]], vals[i])
 
     def testDeleteFromNow(self):
         '''Test we can delete a set of signal values at the current moment.'''
         d = self._dict[0]
-        vals = dict(a=25,
-                    b=35,
-                    c=40)
-        d.setFrom(vals)
+        keys = ['a', 'b', 'c']
+        vals = [25, 35, 45]
+        d.setFrom(keys, vals)
         d.deleteFrom(['a', 'c'])
         self.assertCountEqual(d.keys(), ['b'])
 
     def testDeleteFromLater(self):
         '''Test we can delete a set of signal values at a later moment.'''
         d = self._dict[0]
-        vals = dict(a=25,
-                    b=35,
-                    c=40)
-        d.setFrom(vals)
+        keys = ['a', 'b', 'c']
+        vals = [25, 35, 45]
+        d.setFrom(keys, vals)
 
         d1 = self._dict[1]
         d1.deleteFrom(['a', 'c'])
         self.assertCountEqual(d1.keys(), ['b'])
+
 
 if __name__ == '__main__':
     unittest.main()

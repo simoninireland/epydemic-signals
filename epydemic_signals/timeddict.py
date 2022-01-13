@@ -185,13 +185,16 @@ class TimedDictView(Generic[K, V]):
                 self._dict[k].insert(i + 1, (self._time, True, v))
                 self._now[k] = i + 1
 
-    def setFrom(self, ss: Iterable[V]):
-        '''Set the value at several keys. The values are passed
-        as a dict.
+    def setFrom(self, ks: Iterable[K], vs: Iterable[V]):
+        '''Set the value at several keys. The keys and values are passed
+        as two arrays.
 
-        :param ss: a dict of values'''
-        for k, v in ss.items():
-            self[k] = v
+        :param ks: the list of keys
+        :param ss: the list of values'''
+        if len(ks) != len(vs):
+            raise ValueError('Key and value list lengths don\'t match')
+        for i in range(len(ks)):
+            self[ks[i]] = vs[i]
 
     def __delitem__(self, k: K):
         '''Delete the mapping for the given key at the current time. This
@@ -204,11 +207,11 @@ class TimedDictView(Generic[K, V]):
             self._dict[k].insert(i + 1, (self._time, False, None))
             del self._now[k]
 
-    def deleteFrom(self, ss: Iterable[K]):
+    def deleteFrom(self, ks: Iterable[K]):
         '''Delete the values associated with several keys.
 
-        :param ss: the list of keys'''
-        for k in ss:
+        :param ks: the list of keys'''
+        for k in ks:
             del self[k]
 
     def get(self, k: K, default: V = None) -> V:
