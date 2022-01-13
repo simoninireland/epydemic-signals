@@ -26,9 +26,11 @@ from epydemic_signals import Signal, SignalGenerator
 
 class InfectionBoundarySignalGenerator(SignalGenerator):
     '''Create the infection boundary signal of an SIR
-    epidemic. This signal is defined on nodes as the number of SI edges
-    incident on that node, and so is 0 by definition on any other
-    than S or I edges.
+    epidemic. This signal is defined as the number of
+    incident SI edges on infected nodes, and zero everywhere
+    else. It therefore represents the "infection potential"
+    of nodes: those with higher values are able to potentially
+    infect mode nodes.
 
     :param p: the process
     :param s: the signal
@@ -50,7 +52,7 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
         p = self.process()
         cm = cast(CompartmentedModel, p)
 
-        # initialise signal t 0 everywhere, to make sure
+        # initialise signal to 0 everywhere, to make sure
         # we have an entry for all nodes
         s = signal[0.0]
         for n in g.nodes():
@@ -60,15 +62,9 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
         for n in g.nodes():
             if cm.getCompartment(n) == SIR.INFECTED:
                 # count the incident SI edges
-                si = 0
-                for (_, m) in g.edges(n):
+                for m in g.neighbors(n):
                     if cm.getCompartment(m) == SIR.SUSCEPTIBLE:
-                        si += 1
-                        if m in s:
-                            s[m] += 1
-                        else:
-                            s[m] = 1
-                s[n] = si
+                        s[n] += 1
 
     def infect(self, t: float, e: Edge):
         '''Change the signal on infection. This involves removing any
@@ -84,33 +80,20 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
         (n, _) = e
 
         # traverse all neighbours and count SI edges
-        si = 0
         for m in g.neighbors(n):
             c = cm.getCompartment(m)
             if c == SIR.SUSCEPTIBLE:
-                # new SI edge, incrment both us and the neighbour
-                si += 1
-                s[m] += 1
+                # new SI edge, increment us
+                s[n] += 1
             elif c == SIR.INFECTED:
                 # former SI edge, decrement the other end
                 s[m] -= 1
-        s[n] = si
 
     def remove(self, t: float, n: Node):
-        '''Update signal on removal. This decrements any susceptibble
-        neighbours' signal values and sets us to 0.
-
+        '''Update signal on removal. This sets our value to 0.
 
         :param t: the simulation time
-        :param e: the SI edge'''
+        :param n: the node'''
         signal = self.signal()
         s = signal[t]
-        g = self.network()
-        cm = cast(CompartmentedModel, self.process())
-
-        for m in g.neighbors(n):
-            c = cm.getCompartment(m)
-            if c == SIR.SUSCEPTIBLE:
-                # former SI edge, decrement the neighbour
-                s[m] -= 1
         s[n] = 0

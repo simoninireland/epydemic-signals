@@ -31,7 +31,8 @@ from epydemic_signals import Signal
 def plot_signal(s: Signal, t: float,
                 ax: Axes = None,
                 cmap: Colormap = None,
-                norm : Normalize = None,
+                vmin: float = None, vmax: float = None,
+                norm: Normalize = None,
                 pos: Dict[Any, Tuple[float, float]] = None,
                 title: str = None,
                 fontsize: int = 5,
@@ -44,6 +45,8 @@ def plot_signal(s: Signal, t: float,
     :param t: the simulation time
     :param ax: (optional) axes to draw into
     :param cmap: (optional) mapping from signal values to colours
+    :param vmin: (optional) minimum signal value
+    :param vmax (optional) maximum signal value
     :param norm: (optional) normaliser of signal values
     :param pos: (optional) a mapping of nodes to positions
     :param title: (optional) title for plot
@@ -55,9 +58,12 @@ def plot_signal(s: Signal, t: float,
     g = s.network()
     s_t = s[t]
     colours = [s_t[n] for n in g.nodes()]
-    vs = list(s.values())
-    vs.sort()
-    (vmin, vmax) = (vs[1], vs[-2])  # avoid endpoints in case of infinities
+    if vmin is None and vmax is None:
+        vs = list(s.values())
+        vs.sort()
+        (vmin, vmax) = (vs[1], vs[-2])  # avoid endpoints in case of infinities
+    elif vmin is None or vmax is None:
+        raise ValueError('Need to provide both minimum and maximum signal value, or neither')
 
     # fil in defaults
     if ax is None:

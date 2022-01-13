@@ -36,7 +36,7 @@ def plot_compartments(s: Signal, t: float,
                       marker: str = '.',
                       markersize: float = 0.75):
     '''Draw a colour-coded diagram of the state of an epidemic at the given
-    time, using the compartments taken from a :class:`CompartmentSignal`
+    time, using the compartments taken from a :class:`Signal`
     captured over the epidemic.
 
     :param s: the signal
