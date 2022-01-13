@@ -230,6 +230,44 @@ class TimedDictTests(unittest.TestCase):
         self.assertEqual(d1.asdict()['a'], 10)
         self.assertEqual(d1.asdict()['b'], 20)
 
+    def testArrayEmpty(self):
+        '''Test we can snapshot as an array, with no keys requested.'''
+        d = self._dict[0]
+        a = d.asarray([])
+        self.assertEqual(a.shape[0], 0)
+
+    def testArray(self):
+        '''Test we can snapshot as an array.'''
+        d = self._dict[0]
+        d['a'] = 1
+        d['b'] = 2
+        d['c'] = 3
+
+        a = d.asarray(['a', 'b', 'c'])
+        self.assertCountEqual(a, [1, 2, 3])
+
+        # different order
+        a = d.asarray(['b', 'c', 'a'])
+        self.assertCountEqual(a, [2, 3, 1])
+
+        # duplicates
+        a = d.asarray(['b', 'c', 'b'])
+        self.assertCountEqual(a, [2, 3, 2])
+
+    def testArrayWithNodes(self):
+        '''Test we can get the values associated with the nodes of a graph.'''
+        d = self._dict[0]
+        g = networkx.Graph()
+        g.add_nodes_from([0, 1, 2, 3, 4, 5])
+        vals = dict()
+        for n in [5, 4, 2, 0, 3, 1]:
+            vals[n] = n * 8
+        d.setFrom(vals)
+
+        a = d.asarray(g.nodes())
+        for i in range(g.order()):
+            self.assertEqual(a[i], vals[i])
+
     def testUpdates(self):
         '''Test retrieving update times.'''
         d = self._dict[0]
@@ -271,6 +309,39 @@ class TimedDictTests(unittest.TestCase):
 
         self.assertCountEqual(self._dict.valuesAtSomeTime(), [0, 30])
 
+    def testSetFrom(self):
+        '''Test we can set a selection of values in one go.'''
+        d = self._dict[0]
+        vals = dict(a=25,
+                    b=35,
+                    c=40)
+        d.setFrom(vals)
+        self.assertCountEqual(d.keys(), vals.keys())
+        self.assertCountEqual(d.values(), vals.values())
+        for k in d.keys():
+            self.assertEqual(d[k], vals[k])
+
+    def testDeleteFromNow(self):
+        '''Test we can delete a set of signal values at the current moment.'''
+        d = self._dict[0]
+        vals = dict(a=25,
+                    b=35,
+                    c=40)
+        d.setFrom(vals)
+        d.deleteFrom(['a', 'c'])
+        self.assertCountEqual(d.keys(), ['b'])
+
+    def testDeleteFromLater(self):
+        '''Test we can delete a set of signal values at a later moment.'''
+        d = self._dict[0]
+        vals = dict(a=25,
+                    b=35,
+                    c=40)
+        d.setFrom(vals)
+
+        d1 = self._dict[1]
+        d1.deleteFrom(['a', 'c'])
+        self.assertCountEqual(d1.keys(), ['b'])
 
 if __name__ == '__main__':
     unittest.main()

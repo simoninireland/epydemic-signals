@@ -17,10 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with epydemic-signals. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-from typing import Generic, TypeVar, Dict, Tuple, List, Iterable
+from numpy import array, zeros
+from typing import Generic, TypeVar,Union, Dict, Tuple, List, Iterable, cast
 
 
-# The top-level class for this code is the TimedDict. This is howver a
+# The top-level class for this code is the TimedDict. This is however a
 # very thin wrapper onto the TimedDictView, which is the class that
 # actually implements the sequence of diffs used to represent time-varying
 # mappings.
@@ -120,7 +121,8 @@ class TimedDictView(Generic[K, V]):
     def __contains__(self, k: K) -> bool:
         '''Test whether the given k is defined at the current time.
 
-        :param k: the keyed:returns: True if the key is in the dict at the current time'''
+        :param k: the key
+        :returns: True if the key is in the dict at the current time'''
         return k in self.keys()
 
     def values(self) -> Iterable[V]:
@@ -183,6 +185,14 @@ class TimedDictView(Generic[K, V]):
                 self._dict[k].insert(i + 1, (self._time, True, v))
                 self._now[k] = i + 1
 
+    def setFrom(self, ss: Iterable[V]):
+        '''Set the value at several keys. The values are passed
+        as a dict.
+
+        :param ss: a dict of values'''
+        for k, v in ss.items():
+            self[k] = v
+
     def __delitem__(self, k: K):
         '''Delete the mapping for the given key at the current time. This
         does not affect values at earlier times, or assignments in the future.
@@ -193,6 +203,13 @@ class TimedDictView(Generic[K, V]):
             i = self._updateBefore(k)
             self._dict[k].insert(i + 1, (self._time, False, None))
             del self._now[k]
+
+    def deleteFrom(self, ss: Iterable[K]):
+        '''Delete the values associated with several keys.
+
+        :param ss: the list of keys'''
+        for k in ss:
+            del self[k]
 
     def get(self, k: K, default: V = None) -> V:
         '''Get the value of the given key, returning the default value if
@@ -225,6 +242,19 @@ class TimedDictView(Generic[K, V]):
         for k in self.keys():
             d[k] = self[k]
         return d
+
+    def asarray(self, ks: Iterable[K]) -> array:
+        '''Return a snapshot at the current time as a `numpy` array, with
+        the order of the values being given by the list of keys.
+
+        :param ks: the keys
+        :returns: an array'''
+        a = zeros(len(ks))
+        i = 0
+        for k in ks:
+            a[i] = self[k]
+            i += 1
+        return a
 
 
 class TimedDict(Generic[K, V]):
