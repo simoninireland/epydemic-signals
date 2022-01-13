@@ -320,6 +320,22 @@ class TimedDictTests(unittest.TestCase):
         for i in range(len(keys)):
             self.assertEqual(d[keys[i]], vals[i])
 
+    def testSetFromFewerKeys(self):
+        '''Test we can't have more values than keys.'''
+        d = self._dict[0]
+        keys = ['a', 'b']
+        vals = [25, 35, 45]
+        with self.assertRaises(ValueError):
+            d.setFrom(keys, vals)
+
+    def testSetFromFewerValues(self):
+        '''Test we can't have more keys than values.'''
+        d = self._dict[0]
+        keys = ['a', 'b', 'c']
+        vals = [25, 35]
+        with self.assertRaises(ValueError):
+            d.setFrom(keys, vals)
+
     def testDeleteFromNow(self):
         '''Test we can delete a set of signal values at the current moment.'''
         d = self._dict[0]

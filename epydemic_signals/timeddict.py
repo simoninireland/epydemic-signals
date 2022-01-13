@@ -185,16 +185,53 @@ class TimedDictView(Generic[K, V]):
                 self._dict[k].insert(i + 1, (self._time, True, v))
                 self._now[k] = i + 1
 
+    @staticmethod
+    def zipFail(v1s, v2s):
+        '''Return an iterator over a pair of child iterators that returns
+        corresponding valuyes from each, raising an exception if either of them
+        runs out before the other. This contrasts with Python's `zip` function
+        (which exhausts silently) and with `itertools.zip_longest` (which pads the
+        shorter sequence).
+
+        :param v1s the first iterator
+        :param v1s: the second iterator
+        :returns: an iterator of pairs'''
+        i1 = iter(v1s)
+        i2 = iter(v2s)
+        i1_exhausted = False
+        while True:
+            # get a valuye from i1
+            try:
+                a = next(i1)
+            except StopIteration:
+                i1_exhausted = True
+
+            # get a value from i2
+            try:
+                b = next(i2)
+                if i1_exhausted:
+                    # i1 finished before i2
+                    raise ValueError('First iterator exhausted prematurely')
+                else:
+                    yield (a, b)
+            except StopIteration:
+                if i1_exhausted:
+                    # both iterators exhausted together, so we're finished
+                    return
+                else:
+                    # i2 finished before i1
+                    raise ValueError('Second iterator exhausted prematurely')
+
     def setFrom(self, ks: Iterable[K], vs: Iterable[V]):
         '''Set the value at several keys. The keys and values are passed
-        as two arrays.
+        as two iterables, typically lists. These should be the same length: if
+        not, the paiures that *can* be added, *will* be added, and an exception
+        will then be raised.
 
         :param ks: the list of keys
         :param ss: the list of values'''
-        if len(ks) != len(vs):
-            raise ValueError('Key and value list lengths don\'t match')
-        for i in range(len(ks)):
-            self[ks[i]] = vs[i]
+        for (k, v) in TimedDictView.zipFail(ks, vs):
+            self[k] = v
 
     def __delitem__(self, k: K):
         '''Delete the mapping for the given key at the current time. This
