@@ -28,13 +28,15 @@ V = TypeVar('V')
 
 
 class Signal(Generic[V]):
-    '''Encode a signal on a network.
+    '''Encode a time-varying signal on a network.
 
     A signal -- or strictly speaking a node signal -- associates a mapping
-    from nodes to values for every point in time.'''
+    from nodes to values for every point in time.
 
-    def __init__(self):
-        self._network: Graph = None                    # the domain of the signal
+    :param g: (optional) the network over which the signal is defined'''
+
+    def __init__(self, g: Graph = None):
+        self._network: Graph = g                       # the domain of the signal
         self._dict: TimedDict[float, V] = TimedDict()  # the signal data structure
 
 
