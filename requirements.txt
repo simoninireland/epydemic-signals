@@ -1,3 +1,4 @@
 epydemic
 networkx
+pygsp
 matplotlib
