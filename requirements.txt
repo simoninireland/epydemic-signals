@@ -1,4 +1,5 @@
 epydemic
 networkx
 pygsp
+pyunlocbox
 matplotlib
