@@ -45,6 +45,7 @@ SOURCES_TESTS = \
 	test/__init__.py \
 	test/test_timeddict.py \
 	test/test_signal.py \
+	test/test_notebook.py \
 	test/test_progress.py \
 	test/test_boundary.py \
 	test/test_stochasticsignalgenerator.py
