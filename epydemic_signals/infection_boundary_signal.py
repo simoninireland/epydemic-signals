@@ -32,20 +32,28 @@ class InfectionBoundarySignalGenerator(SignalGenerator):
     of nodes: those with higher values are able to potentially
     infect mode nodes.
 
-    :param p: the process
     :param s: the signal
     '''
 
-    def __init__(self, p: Process, s: Signal = None):
-        super().__init__(p, s)
+    def __init__(self, s: Signal = None):
+        super().__init__(s)
 
         # register the event handlers
         self.addEventTypeHandler(SIR.INFECTED, self.infect)
         self.addEventTypeHandler(SIR.REMOVED, self.remove)
 
-    def setUp(self, g: Graph):
-        '''Capture the initial signal.'''
-        super().setUp(g)
+    def process(self) -> Process:
+        '''Return the process this generator is monitoring.
+
+        :returns: the process'''
+        return self.experiment().process()
+
+    def setUp(self, g: Graph, params: Dict[str, Any]):
+        '''Capture the initial signal.
+
+        :param g: the network
+        :param params: the experimental parameters'''
+        super().setUp(g, params)
 
         signal = self.signal()
         g = self.network()

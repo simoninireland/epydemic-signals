@@ -258,15 +258,15 @@ class TimedDictTests(unittest.TestCase):
         '''Test we can get the values associated with the nodes of a graph.'''
         d = self._dict[0]
         g = networkx.Graph()
-        g.add_nodes_from([0, 1, 2, 3, 4, 5])
-        vals = dict()
-        for n in [5, 4, 2, 0, 3, 1]:
-            vals[n] = n * 8
-        d.setFrom(vals)
+        ns = [0, 1, 2, 3, 4, 5]
+        g.add_nodes_from(ns)
+        keys = [5, 4, 2, 0, 3, 1]
+        vals = [n * 8 for n in keys]
+        d.setFrom(keys, vals)
 
-        a = d.asarray(g.nodes())
-        for i in range(g.order()):
-            self.assertEqual(a[i], vals[i])
+        a = d.asarray(ns)
+        for i in range(len(ns)):
+            self.assertEqual(a[i], i * 8)
 
     def testUpdates(self):
         '''Test retrieving update times.'''

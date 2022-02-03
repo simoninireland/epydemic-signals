@@ -41,12 +41,11 @@ class SIRProgressSignalGenerator(SignalGenerator):
     an infected node indicates the number of hops away from the nearest source
     of infection.
 
-    :param p: the process
     :param s: the signal
     '''
 
-    def __init__(self, p: Process, s: Signal = None):
-        super().__init__(p, s)
+    def __init__(self, s: Signal = None):
+        super().__init__(s)
         self._inf: int = None
         self._compartment: Dict[str, Set[str]] = dict()    # the compartment of a node
         self._boundary: Dict[Any, Any] = dict()            # the closest I to an S or R
@@ -66,12 +65,19 @@ class SIRProgressSignalGenerator(SignalGenerator):
         :returns: the infinity value'''
         return self._inf
 
-    def setUp(self, g: Graph):
+    def process(self) -> Process:
+        '''Return the process this generator is monitoring.
+
+        :returns: the process'''
+        return self.experiment().process()
+
+    def setUp(self, g: Graph, params: Dict[str, Any]):
         '''Capture the initial state of the network as susceptible, infected,
         and removed sets.
 
-        :param g: the network'''
-        super().setUp(g)
+        :param g: the network
+        :param params: the experimental parameters'''
+        super().setUp(g, params)
 
         s = self.signal()
         g = self.network()

@@ -27,12 +27,11 @@ class CompartmentSignalGenerator(SignalGenerator):
     '''Create a signal from the way compartments change. Works for any
     compartmented model.
 
-    :param p: the process
     :param s: the signal
     '''
 
-    def __init__(self, p: Process, s: Signal = None):
-        super().__init__(p, s)
+    def __init__(self, s: Signal = None):
+        super().__init__(s)
 
     def captureCompartments(self, t: float):
         '''Capture the state of the network in terms of compartments. The

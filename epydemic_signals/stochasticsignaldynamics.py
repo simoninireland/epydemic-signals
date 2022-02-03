@@ -20,10 +20,10 @@
 from typing import Union
 from networkx import Graph
 from epydemic import StochasticDynamics, Process, NetworkGenerator
-from epydemic_signals import SignalDynamics
+from epydemic_signals import SignalExperiment
 
 
-class StochasticSignalDynamics(SignalDynamics, StochasticDynamics):
+class StochasticSignalDynamics(SignalExperiment, StochasticDynamics):
     '''A stochastic (Gillespie) dynamics that passes all events to
     a signal generator.
 

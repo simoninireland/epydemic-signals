@@ -44,11 +44,12 @@ class BoundarySignalTests(unittest.TestCase):
                              SIR.P_INFECT: 0.0,
                              SIR.P_REMOVE: 0.0})
         self._signal = Signal()
-        self._generator = InfectionBoundarySignalGenerator(self._p, self._signal)
+        self._generator = InfectionBoundarySignalGenerator(self._signal)
+        self._generator.setExperiment(self._e)
         self._p.build(self._params)
         self._p.setUp(self._params)
         self._p.changeCompartment(1, SIR.INFECTED)
-        self._generator.setUp(self._g)
+        self._generator.setUp(self._g, self._params)
 
     def _playEventsTo(self, ft):
         '''Play all events up to and including time ft, against both the

@@ -31,6 +31,10 @@ from typing import Generic, TypeVar,Union, Dict, Tuple, List, Iterable, cast
 K = TypeVar('K')
 V = TypeVar('V')
 
+# Type variables for the zipFail iterator combinator
+X = TypeVar('X')
+Y = TypeVar('Y')
+
 
 class TimedDictView(Generic[K, V]):
     '''A view of a timed dict snapped at a particular time.
@@ -186,21 +190,21 @@ class TimedDictView(Generic[K, V]):
                 self._now[k] = i + 1
 
     @staticmethod
-    def zipFail(v1s, v2s):
+    def zipFail(v1s: Iterable[X], v2s: Iterable[Y]) -> Iterable[Tuple[X, Y]]:
         '''Return an iterator over a pair of child iterators that returns
-        corresponding valuyes from each, raising an exception if either of them
+        corresponding values from each, raising an exception if either of them
         runs out before the other. This contrasts with Python's `zip` function
         (which exhausts silently) and with `itertools.zip_longest` (which pads the
         shorter sequence).
 
-        :param v1s the first iterator
-        :param v1s: the second iterator
+        :param v1s the first iterable
+        :param v2s: the second iterable
         :returns: an iterator of pairs'''
         i1 = iter(v1s)
         i2 = iter(v2s)
         i1_exhausted = False
         while True:
-            # get a valuye from i1
+            # get a value from i1
             try:
                 a = next(i1)
             except StopIteration:
@@ -225,7 +229,7 @@ class TimedDictView(Generic[K, V]):
     def setFrom(self, ks: Iterable[K], vs: Iterable[V]):
         '''Set the value at several keys. The keys and values are passed
         as two iterables, typically lists. These should be the same length: if
-        not, the paiures that *can* be added, *will* be added, and an exception
+        not, the pairs that *can* be added, *will* be added, and an exception
         will then be raised.
 
         :param ks: the list of keys
@@ -338,7 +342,7 @@ class TimedDict(Generic[K, V]):
         return self._dict.keys()
 
     def valuesAtSomeTime(self) -> Iterable[V]:
-        '''Return a set of the values that have been assigned to some kjey
+        '''Return a set of the values that have been assigned to some key
         at some time.
 
         The values are all the values that can be retrieved at *some* time

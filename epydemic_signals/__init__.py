@@ -32,7 +32,7 @@ from .signal import Signal
 
 # Signal generators and dynamics
 from .signalgenerator import SignalGenerator
-from .signaldynamics import SignalDynamics
+from .signaldynamics import SignalExperiment
 from .stochasticsignaldynamics import StochasticSignalDynamics
 
 # Specific signals and signal generators

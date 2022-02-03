@@ -27,16 +27,16 @@ from networkx import Graph, fast_gnp_random_graph, grid_graph, convert_node_labe
 
 class SIRProgressSignalInvariants(SignalGenerator):
 
-    def __init__(self, p, s, ps):
-        super().__init__(p, s)
+    def __init__(self, s, ps):
+        super().__init__(s)
         self._progressSignalGenerator = ps
         self.addEventTypeHandler(SIR.INFECTED, self.infect)
         self.addEventTypeHandler(SIR.REMOVED, self.remove)
 
-    def setUp(self, g):
-        super().setUp(g)
+    def setUp(self, g, params):
+        super().setUp(g, params)
         g = self.network()
-        p = self.process()
+        p = self.experiment().process()
 
         self._ns = list(g.nodes()).copy()
         self._inf = g.order() + 1
@@ -56,7 +56,7 @@ class SIRProgressSignalInvariants(SignalGenerator):
         self._compartment[SIR.SUSCEPTIBLE].remove(s)
         self._compartment[SIR.INFECTED].add(s)
 
-        p = self.process()
+        p = self.experiment().process()
         # print('infect', s)
         # for n in self.network().nodes():
         #     print(n, p.getCompartment(n), self.signal()[t][n])
@@ -66,7 +66,7 @@ class SIRProgressSignalInvariants(SignalGenerator):
         self._compartment[SIR.INFECTED].remove(s)
         self._compartment[SIR.REMOVED].add(s)
 
-        p = self.process()
+        p = self.experiment().process()
         # print('remove', s)
         # for n in self.network().nodes():
         #     print(n, p.getCompartment(n), self.signal()[t][n])
@@ -232,9 +232,9 @@ class StochasticSignalDynamicsTests(unittest.TestCase):
         e = StochasticSignalDynamics(sir, FixedNetwork(g))
 
         sig = Signal()
-        gen1 = SIRProgressSignalGenerator(sir, sig)
+        gen1 = SIRProgressSignalGenerator(sig)
         e.addSignalGenerator(gen1)
-        gen2 = SIRProgressSignalInvariants(sir, sig, gen1)    # checks the same signal
+        gen2 = SIRProgressSignalInvariants(sig, gen1)    # checks the same signal
         e.addSignalGenerator(gen2)
 
         #rc = e.set(params).run(fatal=True)
@@ -323,9 +323,9 @@ class StochasticSignalDynamicsTests(unittest.TestCase):
         sir = SIR()
         e = StochasticSignalDynamics(sir, ERNetwork())
         progress = Signal()
-        gen = SIRProgressSignalGenerator(sir, progress)
+        gen = SIRProgressSignalGenerator(progress)
         e.addSignalGenerator(gen)
-        gen2 = SIRProgressSignalInvariants(sir, progress, gen)    # checks the same signal
+        gen2 = SIRProgressSignalInvariants(progress, gen)    # checks the same signal
         e.addSignalGenerator(gen2)
 
         lab.runExperiment(e)

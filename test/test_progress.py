@@ -44,11 +44,12 @@ class ProgressSignalTests(unittest.TestCase):
                              SIR.P_INFECT: 0.0,
                              SIR.P_REMOVE: 0.0})
         self._signal = Signal()
-        self._generator = SIRProgressSignalGenerator(self._p, self._signal)
+        self._generator = SIRProgressSignalGenerator(self._signal)
+        self._generator.setExperiment(self._e)
         self._p.build(self._params)
         self._p.setUp(self._params)
         self._p.changeCompartment(1, SIR.INFECTED)
-        self._generator.setUp(self._g)
+        self._generator.setUp(self._g, self._params)
 
     def _playEventsTo(self, ft):
         '''Play all events up to and including time ft, against both the
@@ -191,8 +192,9 @@ class ProgressSignalTests(unittest.TestCase):
         self._p.setUp(self._params)
         self._p.setCompartment(1, SIR.INFECTED)
         signal = Signal()
-        gen = SIRProgressSignalGenerator(self._p, signal)
-        gen.setUp(self._g)
+        gen = SIRProgressSignalGenerator(signal)
+        gen.setExperiment(self._e)
+        gen.setUp(self._g, self._params)
         s = signal[0.0]
         self.assertEqual(s[1], 0)
         self.assertEqual(s[2], 1)
@@ -245,12 +247,13 @@ class ProgressSignalTests(unittest.TestCase):
                        SIR.P_INFECT: 0.0,
                        SIR.P_REMOVE: 0.0})
         signal = Signal()
-        generator = SIRProgressSignalGenerator(p, signal)
+        generator = SIRProgressSignalGenerator(signal)
+        generator.setExperiment(x)
         p.build(params)
         p.setUp(params)
         for i in initialInfecteds:
             p.changeCompartment(i, SIR.INFECTED)
-        generator.setUp(g)
+        generator.setUp(g, params)
 
         ns = list(g.nodes())
         susceptibles = set()
