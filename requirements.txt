@@ -1,5 +1,6 @@
 epydemic
 networkx
+pandas
 pygsp
 pyunlocbox
 matplotlib
