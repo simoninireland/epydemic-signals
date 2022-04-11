@@ -91,6 +91,22 @@ class NotebookTests(unittest.TestCase):
         for k in [tn, en, vn]:
             self.assertIn(k, df.keys())
 
+    def testNoSignal(self):
+        '''Test that a null signal isn't added.'''
+        lab = Lab()
+        nb = lab.notebook()
+        lab['experiment'] = 1
+
+        e = BondPercolationSignal(FixedNetwork(self._g))
+        gen = SignalGenerator()     # doesn't actually generate any signal
+        e.addSignalGenerator(gen)
+
+        rc = lab.runExperiment(e)
+        df = nb.dataframe()
+        self.assertEqual(len(df), 1)
+
+        self.assertNotIn(SignalExperiment.SIGNALS, df)
+
     def signalFromResults(self):
         '''Basic code for notebookm tests.'''
         self._lab['experiment'] = 1

@@ -11,5 +11,6 @@ black
 pylint
 jedi
 jedi-language-server
+ptvsd >= 4.2
 flake8
 rope

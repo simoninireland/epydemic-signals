@@ -49,7 +49,7 @@ class SignalGenerator:
 
     def setSignal(self, s: Signal):
         '''Set the signal being generated. This allows re-use of a signal generator
-        to create more signals.
+        to create more signals, or to change the name (type) of signal generated.
 
         :param s: the signal'''
         self._signal = s

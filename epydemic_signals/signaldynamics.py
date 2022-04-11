@@ -62,14 +62,16 @@ class SignalExperiment:
 
     @staticmethod
     def signals(df: Series) -> List[Signal]:
-        '''Extract all the signals encoded in a ``pandas`` Series. This
+        '''Extract all the signals encoded in a ``pandas.Series``. This
         may of course be none.
 
         The signals are extracted by looking for an entry for a list of
         signals in the :attr:`SIGNALS` column. If found, these are used to
         extract the signal time series and build a signal.
 
-        The order in which the signals appear in the list is undefined.
+        The order in which the signals appear in the list is undefined,
+        although likely to be that in which the generators were added
+        to the experiment.
 
         :param df: a Series
         :returns: a (possibly empty) list of signals'''
@@ -102,13 +104,14 @@ class SignalExperiment:
 
     # ---------- Signals to results ----------
 
-    def reportSignal(self, s: Signal, res: Dict[str, Any]):
+    def reportSignal(self, s: Signal, res: Dict[str, Any]) -> bool:
         '''Add the given signal to the results. This is the bridge from
         signals to ``epydemic``'s normal results mechanism, encoding the
         signal in a form suitable for a lab notebook.
 
         :param s: the signal
-        :param res: the results dict'''
+        :param res: the results dict
+        :returns: True if there were results added'''
         (ts, es, vs) = s.toUpdates()
         if len(ts) > 0:
             # we have some signal to record
@@ -116,6 +119,7 @@ class SignalExperiment:
             res[tn] = ts
             res[en] = es
             res[vn] = vs
+        return (len(ts) > 0)
 
 
     # ---------- Tap method overrides ----------
@@ -139,8 +143,8 @@ class SignalExperiment:
         signals = []
         for gen in self._signalGenerators:
             signal = gen.signal()
-            signals.append(signal.name())
-            self.reportSignal(signal, res)
+            if self.reportSignal(signal, res):
+                signals.append(signal.name())
             gen.tearDown()
         if len(signals) > 0:
             res[self.SIGNALS] = signals

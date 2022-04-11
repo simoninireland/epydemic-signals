@@ -287,12 +287,16 @@ class TimedDictView(Generic[K, V]):
             d[k] = self[k]
         return d
 
-    def asarray(self, ks: Iterable[K]) -> array:
+    def asarray(self, ks: Iterable[K] = None) -> array:
         '''Return a snapshot at the current time as a `numpy` array, with
-        the order of the values being given by the list of keys.
+        the order of the values being given by the list of keys. If no
+        keys are given then all the keys with current values are used, in
+        key order: this isn't likely to be too meaningful.
 
-        :param ks: the keys
+        :param ks: (optional) the keys (defaults to all)
         :returns: an array'''
+        if ks is None:
+            ks = list(self.keys())
         a = zeros(len(ks))
         i = 0
         for k in ks:

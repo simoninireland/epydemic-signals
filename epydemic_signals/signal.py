@@ -138,25 +138,25 @@ class Signal(Generic[V]):
 
         ns = list(self.network().nodes())
         ts = self.transitions()
-
-        # initial values
-        s_t = self[ts[0]]
-        for n in ns:
-            times.append(ts[0])
-            nodes.append(n)
-            values.append(s_t[n])
-
-        # updates
-        s_t_old = s_t
-        for t in ts[1:]:
-            s_t = self[t]
+        if len(ts) > 0:
+            # initial values
+            s_t = self[ts[0]]
             for n in ns:
-                if s_t[n] != s_t_old[n]:
-                    # value has changed, record as an update
-                    times.append(t)
-                    nodes.append(n)
-                    values.append(s_t[n])
+                times.append(ts[0])
+                nodes.append(n)
+                values.append(s_t[n])
+
+            # updates
             s_t_old = s_t
+            for t in ts[1:]:
+                s_t = self[t]
+                for n in ns:
+                    if s_t[n] != s_t_old[n]:
+                        # value has changed, record as an update
+                        times.append(t)
+                        nodes.append(n)
+                        values.append(s_t[n])
+                s_t_old = s_t
 
         return (times, nodes, values)
 

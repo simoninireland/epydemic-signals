@@ -4,3 +4,7 @@ pandas
 pygsp
 pyunlocbox
 matplotlib
+mypy
+jedi
+jedi-language-server
+black
