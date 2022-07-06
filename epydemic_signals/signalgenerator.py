@@ -35,7 +35,7 @@ class SignalGenerator:
     By default a basic instance of :class:`Signal` is used for the signal.
     Specific instances and/or sub-classes can be provided if needed. It's
     often useful to set a default signal with a meaningful name in the
-    constructor, so that different signasl objects can be differentiated if
+    constructor, so that different signal objects can be differentiated if
     written into a notebook.
 
     :param s: (optional) the signal being generated (creates one if missing)'''
