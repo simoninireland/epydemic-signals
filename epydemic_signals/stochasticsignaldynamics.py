@@ -1,6 +1,6 @@
-# A stochasitc dynamics with signal generation
+# A stochastic dynamics with signal generation
 #
-# Copyright (C) 2021 Simon Dobson
+# Copyright (C) 2021-2022 Simon Dobson
 #
 # This file is part of epydemic-signals, an experiment in epidemic processes.
 #
