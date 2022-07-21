@@ -136,6 +136,9 @@ class SignalGenerator:
         handlers registered for them: any events for which there is no
         handler are silently ignored.
 
+        Sub-classes can override this method to avoid the dispatch mechanism
+        and simply handle all events in one place.
+
         :param t: the simulation time
         :param etype: the event type
         :param e: the element'''
