@@ -38,6 +38,7 @@ SOURCES_CODE = \
 	epydemic_signals/signalgenerator.py \
 	epydemic_signals/signaldynamics.py \
 	epydemic_signals/stochasticsignaldynamics.py \
+	epydemic_signals/synchronoussignaldynamics.py \
 	epydemic_signals/compartment_signal.py \
 	epydemic_signals/progress_signal.py \
 	epydemic_signals/infection_boundary_signal.py
@@ -48,7 +49,9 @@ SOURCES_TESTS = \
 	test/test_notebook.py \
 	test/test_progress.py \
 	test/test_boundary.py \
-	test/test_stochasticsignalgenerator.py
+	test/progresssignalinvariants.py \
+	test/test_stochasticsignalgenerator.py \
+	test/test_synchronoussignalgenerator.py
 
 SOURCES_DOC_CONF = doc/conf.py
 SOURCES_DOC_BUILD_DIR = doc/_build
