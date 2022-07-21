@@ -34,6 +34,7 @@ from .signal import Signal
 from .signalgenerator import SignalGenerator
 from .signaldynamics import SignalExperiment
 from .stochasticsignaldynamics import StochasticSignalDynamics
+from .synchronoussignaldynamics import SynchronousSignalDynamics
 
 # Specific signals and signal generators
 from .progress_signal import SIRProgressSignalGenerator
