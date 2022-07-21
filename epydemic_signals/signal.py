@@ -46,7 +46,8 @@ class Signal(Generic[V]):
     def __init__(self, g: Graph = None, name: str = None):
         # fill in the defaults
         if name is None:
-            name = uuid4()
+            # use a stringified UUID as default unique name
+            name = str(uuid4())
         self._name = name                              # the signal name
         self._network: Graph = g                       # the domain of the signal
         self._dict: TimedDict[float, V] = TimedDict()  # the signal data structure
