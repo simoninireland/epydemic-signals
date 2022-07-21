@@ -26,13 +26,6 @@ import unittest
 import networkx
 
 
-class BondPercolationSignal(SignalExperiment, BondPercolation):
-    '''A bond percolation experiment with a signal generator tap.'''
-
-    def __init__(self, g, samples = None):
-        super().__init__(g, samples)
-
-
 class StaticGenerator(SignalGenerator):
     '''A signal generator that generates a worthwhile but simple signal.'''
 
@@ -45,24 +38,27 @@ class StaticGenerator(SignalGenerator):
         self._m = multiplier
 
     def event(self, t, etype, e):
-        if etype == BondPercolation.SAMPLE:
-            s_t = self.signal()[t]
-            for n in self.network().nodes():
-                s_t[n] = n * t * self._m
+        s_t = self.signal()[t]
+        for n in self.network().nodes():
+            s_t[n] = n * t * self._m
 
 
 class NotebookTests(unittest.TestCase):
 
     def setUp(self):
-        self._g = networkx.Graph()
-        self._g.add_nodes_from([0, 1, 2, 3, 4, 5, 6])
-        self._g.add_edges_from([(0, 1), (1, 2), (3, 0), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5), (4, 6)])
-        self._signal = Signal()
-
         tf = NamedTemporaryFile()
         tf.close()
         self._fn = tf.name
         #self._fn = 'test.h5'
+
+        self._g = networkx.complete_graph(50)
+
+        self._nb = LabNotebook()
+        self._lab = Lab(notebook=self._nb)
+        self._lab[SIR.P_INFECTED] = 0.2
+        self._lab[SIR.P_REMOVE] = 1.0
+        self._lab[SIR.P_INFECT] = 0.8
+        self._model = SIR()
 
     def tearDown( self ):
         try:
@@ -73,114 +69,65 @@ class NotebookTests(unittest.TestCase):
 
     def testLab(self):
         '''Test the use of signals with a lab notebook, the "normal" use case.'''
-        lab = Lab()
-        nb = lab.notebook()
-        lab['experiment'] = 1
-
-        e = BondPercolationSignal(FixedNetwork(self._g))
         gen = StaticGenerator()
-        e.addSignalGenerator(gen)
+        e = StochasticSignalDynamics(self._model, self._g)
+        e.attachSignalGenerator(gen, self._model)
 
-        rc = lab.runExperiment(e)
-        df = nb.dataframe()
+        rc = self._lab.runExperiment(e)
+        df = self._nb.dataframe()
         self.assertEqual(len(df), 1)
 
         # check we have all the series we expect for the signal
         signal = gen.signal()
-        (tn, en, vn) = BondPercolationSignal.signalSeries(signal)
+        (tn, en, vn) = StochasticSignalDynamics.signalSeries(signal)
         for k in [tn, en, vn]:
             self.assertIn(k, df.keys())
 
     def testNoSignal(self):
         '''Test that a null signal isn't added.'''
-        lab = Lab()
-        nb = lab.notebook()
-        lab['experiment'] = 1
+        gen = StaticGenerator()
+        e = StochasticSignalDynamics(self._model, self._g)
+        e.attachSignalGenerator(gen, self._model)
 
-        e = BondPercolationSignal(FixedNetwork(self._g))
-        gen = SignalGenerator()     # doesn't actually generate any signal
-        e.addSignalGenerator(gen)
+        self._lab[SIR.P_INFECTED] = 0.0  # no epidemic occurs
 
-        rc = lab.runExperiment(e)
-        df = nb.dataframe()
+        rc = self._lab.runExperiment(e)
+        df = self._nb.dataframe()
         self.assertEqual(len(df), 1)
 
         self.assertNotIn(SignalExperiment.SIGNALS, df)
 
-    def signalFromResults(self):
-        '''Basic code for notebookm tests.'''
-        self._lab['experiment'] = 1
-
-        e = BondPercolationSignal(FixedNetwork(self._g))
-        gen = StaticGenerator()
-        e.addSignalGenerator(gen)
-
-        rc = self._lab.runExperiment(e)
-        s1 = gen.signal()
-        df = self._nb.dataframe()
-
-        # check we can reconstruct the signal
-        s2 = Signal(name=StaticGenerator.SIGNALNAME)
-        s2.fromSeries(df.iloc[0])
-
-        # check the original and reconstructed signal agreee
-        for t in s1.transitions():
-            s1_t = s1[t]
-            s2_t = s2[t]
-            for n in s1_t.keys():
-                self.assertEqual(s1_t[n], s2_t[n])
-
-    def testSignalFromResults(self):
-        '''Test we can re-construct a signal from a notebook.'''
-        self._lab = Lab()
-        self._nb = self._lab.notebook()
-        self.signalFromResults()
-
-    def testJSON(self):
-        '''Test we can save and restore from a JSON notebook.'''
-        self._nb = JSONLabNotebook(self._fn)
-        self._lab = Lab(notebook=self._nb)
-        self.signalFromResults()
-
-    def testHDF5(self):
-        '''Test we can save and restore from an HDF5 notebook.'''
-        self._nb = HDF5LabNotebook(self._fn)
-        self._lab = Lab(notebook=self._nb)
-        self.signalFromResults()
-
     def testAllSignalsNone(self):
         '''Test extracting a signal from a series that has none.'''
-        lab = Lab()
-        lab['experiment'] = 1
-        e = BondPercolationSignal(FixedNetwork(self._g))  # no signal generator attached
-        lab.runExperiment(e)
-        df = lab.notebook().dataframe()
+        gen = StaticGenerator()
+        e = StochasticSignalDynamics(self._model, self._g)  # no signal generator attached
+
+        rc = self._lab.runExperiment(e)
+        df = self._nb.dataframe()
         self.assertEqual(len(df), 1)
         self.assertCountEqual(SignalExperiment.signals(df.iloc[0]), [])
 
     def testAllSignalsOne(self):
         '''Test extracting a signal from a series that has one.'''
-        lab = Lab()
-        lab['experiment'] = 1
-        e = BondPercolationSignal(FixedNetwork(self._g))
         gen = StaticGenerator()
-        e.addSignalGenerator(gen)
-        lab.runExperiment(e)
-        df = lab.notebook().dataframe()
+        e = StochasticSignalDynamics(self._model, self._g)
+        e.attachSignalGenerator(gen, self._model)
+
+        rc = self._lab.runExperiment(e)
+        df = self._nb.dataframe()
         self.assertEqual(len(df), 1)
         self.assertEqual(len(SignalExperiment.signals(df.iloc[0])), 1)
 
     def testAllSignalsTwo(self):
         '''Test extracting a signal from a series that has two.'''
-        lab = Lab()
-        lab['experiment'] = 1
-        e = BondPercolationSignal(FixedNetwork(self._g))
         gen1 = StaticGenerator()
-        e.addSignalGenerator(gen1)
         gen2 = StaticGenerator(name='ttt', multiplier=10)
-        e.addSignalGenerator(gen2)
-        lab.runExperiment(e)
-        df = lab.notebook().dataframe()
+        e = StochasticSignalDynamics(self._model, self._g)
+        e.attachSignalGenerator(gen1, self._model)
+        e.attachSignalGenerator(gen2, self._model)
+
+        rc = self._lab.runExperiment(e)
+        df = self._nb.dataframe()
         self.assertEqual(len(df), 1)
         ss = SignalExperiment.signals(df.iloc[0])
         self.assertEqual(len(ss), 2)
@@ -197,6 +144,53 @@ class NotebookTests(unittest.TestCase):
             s2_t = s2[t]
             for n in s2_t.keys():
                 self.assertEqual(s2_t[n], n * t * 10)
+
+
+    # ---------- Different notebook storage formats ----------
+
+    def signalFromResults(self):
+        '''Basic code for notebook tests.'''
+        sir = SIR()
+        gen = StaticGenerator()
+        e = StochasticSignalDynamics(sir, self._g)
+        e.attachSignalGenerator(gen, sir)
+
+        self._lab[SIR.P_INFECTED] = 0.2
+        self._lab[SIR.P_REMOVE] = 1.0
+        self._lab[SIR.P_INFECT] = 1.0
+
+        rc = self._lab.runExperiment(e)
+        s1 = gen.signal()
+        df = self._nb.dataframe()
+
+        # check we can reconstruct the signal
+        s2 = Signal(name=StaticGenerator.SIGNALNAME)
+        s2.fromSeries(df.iloc[0])
+
+        # check the original and reconstructed signal agree
+        for t in s1.transitions():
+            s1_t = s1[t]
+            s2_t = s2[t]
+            for n in s1_t.keys():
+                self.assertEqual(s1_t[n], s2_t[n])
+
+    def testSignalFromResults(self):
+        '''Test we can re-construct a signal from a notebook.'''
+        self._nb = LabNotebook()
+        self._lab = Lab(notebook=self._nb)
+        self.signalFromResults()
+
+    def testJSON(self):
+        '''Test we can save and restore from a JSON notebook.'''
+        self._nb = JSONLabNotebook(self._fn)
+        self._lab = Lab(notebook=self._nb)
+        self.signalFromResults()
+
+    def testHDF5(self):
+        '''Test we can save and restore from an HDF5 notebook.'''
+        self._nb = HDF5LabNotebook(self._fn)
+        self._lab = Lab(notebook=self._nb)
+        self.signalFromResults()
 
 
 if __name__ == '__main__':
