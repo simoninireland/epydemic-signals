@@ -19,7 +19,7 @@
 
 from typing import Callable, Dict, Any
 from networkx import Graph
-from epydemic import Element, Node, Edge, NetworkExperiment
+from epydemic import Element, Node, Edge, Process, NetworkExperiment
 from epydemic_signals import Signal
 
 
@@ -44,6 +44,7 @@ class SignalGenerator:
         if s is None:
             s = Signal()
         self._experiment = None
+        self._process = None
         self._signal = s
         self._typeHandler: Dict[str, EventHandler] = dict()
 
@@ -72,6 +73,18 @@ class SignalGenerator:
 
         :returns: the experiment'''
         return self._experiment
+
+    def setProcess(self, p: Process):
+        '''Set the process instance the generator is receiving events for.
+
+        :param p: the process'''
+        self._process = p
+
+    def process(self) -> Process:
+        '''Return the process instance that the generator is receiving events for.
+
+        :returns: the process'''
+        return self._process
 
     def network(self) -> Graph:
         '''Return the network the signal is being generated over. This

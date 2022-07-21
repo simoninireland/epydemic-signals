@@ -19,13 +19,14 @@
 
 import sys
 from pandas import Series
-from epydemic import Element
+from epydemic import Element, Process
 from epydemic_signals import SignalGenerator, Signal
 from typing import Dict, Any, Tuple, Union, List
 if sys.version_info >= (3, 8):
     from typing import Final
 else:
     from typing_extensions import Final
+
 
 class SignalExperiment:
     '''A mixin class used to add a "tap" for an event stream to a
@@ -39,6 +40,8 @@ class SignalExperiment:
 
 
     # ---------- Result encoding and decoding ----------
+
+    # sd: extend with process name/id/whatever
 
     @staticmethod
     def signalSeriesElement(s: Signal, l: str) -> str:
@@ -90,16 +93,22 @@ class SignalExperiment:
 
     def initialiseEventTaps(self):
         '''Set up the signal generation tap framework. This overrides the
-        method inherited from :class:`NetworkDynamics` andd which is called
+        method inherited from :class:`NetworkDynamics` and which is called
         from that class' constructor.'''
-        self._signalGenerators = []
+        self._signalGenerators : Dict[Process, List[SignalGenerator]] = {}
 
-    def addSignalGenerator(self, gen: SignalGenerator):
-        '''Add a signal generator that will be passed events.
+    def attachSignalGenerator(self, gen: SignalGenerator, p: Process):
+        '''Attach a signal generator to a specific process instance. The generator
+        will receive those events it registers for from this process (and none
+        from any opther processes).
 
-        :param gen: the signal generator'''
-        self._signalGenerators.append(gen)
+        :param gen: the signal generator
+        :param p: the process'''
+        if p not in self._signalGenerators:
+            self._signalGenerators[p] = []
+        self._signalGenerators[p].append(gen)
         gen.setExperiment(self)
+        gen.setProcess(p)
 
 
     # ---------- Signals to results ----------
@@ -131,8 +140,9 @@ class SignalExperiment:
 
         :param params: the experimental parameters'''
         g = self.network()
-        for gen in self._signalGenerators:
-            gen.setUp(g, params)
+        for p in self._signalGenerators.keys():
+            for gen in self._signalGenerators[p]:
+                gen.setUp(g, params)
 
     def simulationEnded(self, res: Union[Dict[str, Any], List[Dict[str, Any]]]):
         '''Notify the signal generators that the simulation has ended. This
@@ -141,19 +151,24 @@ class SignalExperiment:
 
         :param res: the experimental results'''
         signals = []
-        for gen in self._signalGenerators:
-            signal = gen.signal()
-            if self.reportSignal(signal, res):
-                signals.append(signal.name())
-            gen.tearDown()
+        for p in self._signalGenerators.keys():
+            for gen in self._signalGenerators[p]:
+                signal = gen.signal()
+                if self.reportSignal(signal, res):
+                    signals.append(signal.name())
+                gen.tearDown()
         if len(signals) > 0:
             res[self.SIGNALS] = signals
 
-    def eventFired(self, t: float, etype: str, e: Element):
-        '''Pass a fired event to the signal generators.
+    def eventFired(self, t: float, p: Process, etype: str, e: Element):
+        '''Pass a fired event to the signal generators attached to that
+        process. Only the attached geberators will receive the event, not
+        generatorsd attached to other processes.
 
         :param t: the simulation time
+        :param p: the process that initiated the event
         :param etype: the event type
         :param e: the element'''
-        for gen in self._signalGenerators:
-            gen.event(t, etype, e)
+        if p in self._signalGenerators.keys():
+            for gen in self._signalGenerators[p]:
+                gen.event(t, etype, e)
