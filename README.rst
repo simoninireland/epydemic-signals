@@ -7,7 +7,7 @@ epydemic-signals: Epidemics as signals
 Overview
 --------
 
-``epydemic-signals`` is an experiment in treating epidemics processes
+``epydemic-signals`` is an experiment in treating epidemic processes
 on networks as "signals" that can be analysed using the tools of
 signal processing, discrete algebra, and algebraic topology. It is
 closely integrated with the ``epydemic`` epidemic process simulator.
@@ -22,7 +22,7 @@ processes or by adding additional process
 instances. ``epydemic-signals`` provides a third approach: tapping the
 raw event streams of simulations into one or more signal generators
 that can be used to construct time-varying signals derived from the
-process. The result is one or more time series, which can be saved to
+process. The result is one or more time series, which are saved to
 ``epyc`` notebooks alongside other experimental results.
 
 
