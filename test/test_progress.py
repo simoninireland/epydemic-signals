@@ -276,7 +276,6 @@ class ProgressSignalTests(unittest.TestCase):
                 self.assertTrue(False, 'Invalid compartment {c}')
 
         for (t, etype, e) in evs:
-            print(t, etype, e)
             if etype == SIR.INFECTED:
                 p.infect(t, e)
             elif etype == SIR.REMOVED:
