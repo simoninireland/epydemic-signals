@@ -7,6 +7,9 @@ epydemic-signals: Epidemics as signals
 .. image:: https://github.com/simoninireland/epydemic-signals/actions/workflows/ci.yaml/badge.svg
     :target: https://github.com/simoninireland/epydemic-signals/actions/workflows/ci.yaml
 
+.. image:: https://zenodo.org/badge/428717218.svg
+   :target: https://zenodo.org/badge/latestdoi/428717218
+
 .. image:: https://www.gnu.org/graphics/gplv3-88x31.png
     :target: https://www.gnu.org/licenses/gpl-3.0.en.html
 
