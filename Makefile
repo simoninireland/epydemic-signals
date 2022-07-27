@@ -172,7 +172,7 @@ upload:
 
 # Update the remote repos on release
 commit: check-local-repo-clean
-	$(GIT) push origin master
+	$(GIT) push origin main
 	$(GIT) tag -a v$(VERSION) -m "Version $(VERSION)"
 	$(GIT) push origin v$(VERSION)
 
