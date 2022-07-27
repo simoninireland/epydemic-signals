@@ -1,6 +1,12 @@
 epydemic-signals: Epidemics as signals
 ======================================
 
+.. image:: https://badge.fury.io/py/epydemic-signals.svg
+    :target: https://badge.fury.io/py/epydemic-signals
+
+.. image:: https://github.com/simoninireland/epydemic-signals/actions/workflows/ci.yaml/badge.svg
+    :target: https://github.com/simoninireland/epydemic-signals/actions/workflows/ci.yaml
+
 .. image:: https://www.gnu.org/graphics/gplv3-88x31.png
     :target: https://www.gnu.org/licenses/gpl-3.0.en.html
 
