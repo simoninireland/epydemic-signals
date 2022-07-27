@@ -46,6 +46,8 @@ class BoundarySignalTests(unittest.TestCase):
         self._signal = Signal()
         self._generator = InfectionBoundarySignalGenerator(self._signal)
         self._generator.setExperiment(self._e)
+        self._generator.setProcess(self._p)
+        self._p.reset()
         self._p.build(self._params)
         self._p.setUp(self._params)
         self._p.changeCompartment(1, SIR.INFECTED)
@@ -73,8 +75,8 @@ class BoundarySignalTests(unittest.TestCase):
         '''Test the original signal.'''
         s = self._signal[0.0]
         self.assertEqual(s[1], 2)
-        self.assertEqual(s[2], 1)
-        self.assertEqual(s[3], 1)
+        self.assertEqual(s[2], 0)
+        self.assertEqual(s[3], 0)
         self.assertEqual(s[4], 0)
         self.assertEqual(s[5], 0)
         self.assertEqual(s[6], 0)
@@ -83,9 +85,9 @@ class BoundarySignalTests(unittest.TestCase):
         '''Test the signal at t = 1.0.'''
         s = self._playEventsTo(1.0)
         self.assertEqual(s[1], 1)
-        self.assertEqual(s[2], 2)
+        self.assertEqual(s[2], 0)
         self.assertEqual(s[3], 2)
-        self.assertEqual(s[4], 1)
+        self.assertEqual(s[4], 0)
         self.assertEqual(s[5], 0)
         self.assertEqual(s[6], 0)
 
@@ -93,9 +95,9 @@ class BoundarySignalTests(unittest.TestCase):
         '''Test the signal at t = 2.0.'''
         s = self._playEventsTo(2.0)
         self.assertEqual(s[1], 0)
-        self.assertEqual(s[2], 1)
+        self.assertEqual(s[2], 0)
         self.assertEqual(s[3], 2)
-        self.assertEqual(s[4], 1)
+        self.assertEqual(s[4], 0)
         self.assertEqual(s[5], 0)
         self.assertEqual(s[6], 0)
 
@@ -103,21 +105,21 @@ class BoundarySignalTests(unittest.TestCase):
         '''Test the signal at t = 3.0.'''
         s = self._playEventsTo(3.0)
         self.assertEqual(s[1], 0)
-        self.assertEqual(s[2], 2)
+        self.assertEqual(s[2], 0)
         self.assertEqual(s[3], 1)
         self.assertEqual(s[4], 3)
-        self.assertEqual(s[5], 1)
-        self.assertEqual(s[6], 1)
+        self.assertEqual(s[5], 0)
+        self.assertEqual(s[6], 0)
 
     def testAt4(self):
         '''Test the signal at t = 4.0.'''
         s = self._playEventsTo(4.0)
         self.assertEqual(s[1], 0)
-        self.assertEqual(s[2], 1)
+        self.assertEqual(s[2], 0)
         self.assertEqual(s[3], 0)
         self.assertEqual(s[4], 3)
-        self.assertEqual(s[5], 1)
-        self.assertEqual(s[6], 1)
+        self.assertEqual(s[5], 0)
+        self.assertEqual(s[6], 0)
 
 
 if __name__ == '__main__':
