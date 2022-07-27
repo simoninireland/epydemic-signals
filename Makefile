@@ -156,6 +156,9 @@ $(VENV):
 	$(CAT) $(REQUIREMENTS) $(DEV_REQUIREMENTS) >$(VENV)/requirements.txt
 	$(ACTIVATE) && $(PIP) install -U pip wheel && $(CHDIR) $(VENV) && $(PIP) install -r requirements.txt
 
+# Build a release on GitHub
+release:  commit sdist wheel upload
+
 # Build a source distribution
 sdist: $(DIST_SDIST)
 
@@ -163,7 +166,7 @@ sdist: $(DIST_SDIST)
 wheel: $(DIST_WHEEL)
 
 # Upload a source distribution to PyPi
-upload: commit sdist wheel
+upload:
 	$(GPG) --detach-sign -a dist/$(PACKAGENAME)-$(VERSION).tar.gz
 	$(ACTIVATE) && $(RUN_TWINE)
 
@@ -216,6 +219,7 @@ Available targets:
    make env          create a development virtual environment
    make sdist        create a source distribution
    make wheel        create binary (wheel) distribution
+   make release      create an official release on GitHub
    make upload       upload distribution to PyPi
    make commit       tag current version and and push to master repo
    make clean        clean-up the build
