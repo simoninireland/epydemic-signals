@@ -25,7 +25,7 @@ from epydemic import SIR
 class SIRProgressSignalInvariants(SignalGenerator):
     '''A signal generator that tests that its signal is a correctly-computed
     progress signal. This works by using the same signal for two generators --
-    something that's usually a bad idea -- attaching both to the sam,e SIR process,
+    something that's usually a bad idea -- attaching both to the same SIR process,
     and using one to check the other.
 
     .. code-block :: python
