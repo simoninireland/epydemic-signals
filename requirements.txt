@@ -1,4 +1,4 @@
-epydemic >= 1.10.1
+epydemic >= 1.11.1
 networkx
 pandas
 pygsp
