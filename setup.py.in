@@ -1,6 +1,6 @@
 # Setup for epydemic-signals
 #
-# Copyright (C) 2021 Simon Dobson
+# Copyright (C) 2021--2022 Simon Dobson
 #
 # This file is part of epydemic-signals, an experiment in epidemic processes.
 #
@@ -37,6 +37,7 @@ setup(name='epydemic-signals',
                    'Programming Language :: Python :: 3.7',
                    'Programming Language :: Python :: 3.8',
                    'Programming Language :: Python :: 3.9',
+                   'Programming Language :: Python :: 3.10',
                    'Topic :: Scientific/Engineering'],
       python_requires='>=3.6',
       packages=['epydemic_signals',

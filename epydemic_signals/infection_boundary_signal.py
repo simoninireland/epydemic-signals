@@ -1,6 +1,6 @@
 # Extract an infection boundary signal from an SIR model
 #
-# Copyright (C) 2021 Simon Dobson
+# Copyright (C) 2021--2022 Simon Dobson
 #
 # This file is part of epydemic-signals, an experiment in epidemic processes.
 #

@@ -1,6 +1,6 @@
 # A mixin to tap the event stream of a dynamics to a signal generator
 #
-# Copyright (C) 2021 Simon Dobson
+# Copyright (C) 2021--2022 Simon Dobson
 #
 # This file is part of epydemic-signals, an experiment in epidemic processes.
 #

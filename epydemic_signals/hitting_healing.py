@@ -1,6 +1,6 @@
 # Process to collate hittign and healing times
 #
-# Copyright (C) 2021 Simon Dobson
+# Copyright (C) 2021--2022 Simon Dobson
 #
 # This file is part of epydemic-signals, an experiment in epidemics processes.
 #

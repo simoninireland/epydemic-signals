@@ -1,6 +1,6 @@
 # Extract a progress signal from an SIR epidemic
 #
-# Copyright (C) 2021 Simon Dobson
+# Copyright (C) 2021--2022 Simon Dobson
 #
 # This file is part of epydemic-signals, an experiment in epidemic processes.
 #

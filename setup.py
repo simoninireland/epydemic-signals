@@ -1,8 +1,8 @@
 # Setup for epydemic-signals
 #
-# Copyright (C) 2021 Simon Dobson
+# Copyright (C) 2021--2022 Simon Dobson
 #
-# This file is part of epydemic-signals, an experiment in epidemics processes.
+# This file is part of epydemic-signals, an experiment in epidemic processes.
 #
 # epydemic-signals is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,11 +37,13 @@ setup(name='epydemic-signals',
                    'Programming Language :: Python :: 3.7',
                    'Programming Language :: Python :: 3.8',
                    'Programming Language :: Python :: 3.9',
+                   'Programming Language :: Python :: 3.10',
                    'Topic :: Scientific/Engineering'],
       python_requires='>=3.6',
-      packages=['epydemic_signals'],
+      packages=['epydemic_signals',
+                'epydemic_signals.plot'],
       package_data={'epydemic_signals': ['py.typed']},
       zip_safe=False,
-      install_requires=["epydemic", "networkx", "pandas", ],
+      install_requires=["epydemic >= 1.11.1", "networkx", "pandas", "pygsp", "pyunlocbox", "matplotlib", "mypy", "jedi", "jedi-language-server", "black", ],
       extra_requires={':python_version < 3.8': ['typing_extensions']},
 )
